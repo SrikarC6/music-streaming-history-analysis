@@ -1,6 +1,7 @@
 import glob
 import pandas as pd
 
+# Spotify Data
 spotify = pd.concat(
     [pd.read_json(f) for f in glob.glob('Streaming_History_Audio_*.json')],
     ignore_index=True
@@ -15,3 +16,6 @@ spotify_slim = pd.DataFrame({
     "skipped": spotify['skipped'],
     "source": "spotify"
 })
+
+# Apple Music Data
+# apple = pd.read_csv('')
