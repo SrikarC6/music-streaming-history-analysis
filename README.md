@@ -1,3 +1,5 @@
+## Manifesto
+
 People engage with music on a daily basis, yet other than the annual cultural event known
 as Spotify Wrapped, few ever examine their own listening behavior quantitatively -
 including me. Recently, I finally made the push to start owning my own music and
