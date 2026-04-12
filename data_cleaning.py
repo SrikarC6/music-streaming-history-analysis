@@ -2,6 +2,7 @@ import glob
 import json
 import pandas as pd
 
+
 # ── Config ────────────────────────────────────────────────────────────────────
 YOUR_TIMEZONE = "America/New_York"
 
@@ -45,6 +46,7 @@ GENRE_MAP = {
     "Fitness & Workout": "Other",
 }
 
+
 # ── 1. Spotify ─────────────────────────────────────────────────────────────────
 spotify_raw = pd.concat(
     [pd.read_json(f) for f in glob.glob("Streaming_History_Audio_*.json")],
@@ -66,6 +68,7 @@ spotify_slim = pd.DataFrame({
     "source":      "spotify"
 })
 
+
 # ── 2. Apple Music Library — genre + metadata lookup ─────────────────────────
 with open("Apple Music Library Tracks.json") as f:
     library = pd.DataFrame(json.load(f))
@@ -82,6 +85,7 @@ library_lookup = (
         "Track Duration": "track_duration_ms"
     })
 )
+
 
 # ── 3. Apple Music Play Activity ───────────────────────────────────────────────
 apple_raw = pd.read_csv("Apple Music Play Activity.csv")
@@ -113,10 +117,12 @@ apple_slim = pd.DataFrame({
     "source":      "apple_music"
 })
 
+
 # ── 4. Combine ─────────────────────────────────────────────────────────────────
 combined = pd.concat([spotify_slim, apple_slim], ignore_index=True)
 
 combined = combined.dropna(subset=["track_name", "artist_name"])
+
 
 # ── 5. Shared derived columns ─────────────────────────────────────────────────
 combined["minutes_played"] = combined["ms_played"] / 60_000
@@ -130,6 +136,7 @@ combined["month_label"] = combined["datetime_local"].dt.strftime("%Y-%m")
 combined["day_of_week"] = combined["datetime_local"].dt.day_name()
 combined["hour"]        = combined["datetime_local"].dt.hour
 
+
 # ── 6. Genre ──────────────────────────────────────────────────────────────────
 artist_genre_lookup = (
     library[["Artist", "Genre"]]
@@ -141,6 +148,7 @@ artist_genre_lookup = (
 combined["genre_raw"] = combined["artist_name"].map(artist_genre_lookup)
 
 combined["genre"] = combined["genre_raw"].map(GENRE_MAP).fillna("Other")
+
 
 # ── 7. Sort and export ────────────────────────────────────────────────────────
 combined = combined.sort_values("datetime").reset_index(drop=True)
