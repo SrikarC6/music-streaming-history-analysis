@@ -98,8 +98,9 @@ knitr_figures/
 
 # Raw exported data — keep out of version control (large + personal)
 Streaming_History_Audio_*.json
-lastfm_history.csv
-spotify_history_clean.csv
+apple-music-library-tracks.json
+apple-music-play-activity
+
 
 # API keys / secrets (never commit these)
 secrets.py
