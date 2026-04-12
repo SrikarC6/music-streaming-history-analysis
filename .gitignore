@@ -99,7 +99,7 @@ knitr_figures/
 # Raw exported data — keep out of version control (large + personal)
 Streaming_History_Audio_*.json
 apple-music-library-tracks.json
-apple-music-play-activity
+apple-music-play-activity.csv
 
 
 # API keys / secrets (never commit these)
