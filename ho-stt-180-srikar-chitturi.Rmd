@@ -1,0 +1,322 @@
+---
+title: "Who Am I? An Exploratory Analysis of My Personal Music Listening History"
+author: "Srikar Chitturi"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    number_sections: false
+    fig_caption: true
+fontsize: 11pt
+geometry: margin=1in
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.pos = "H"
+)
+
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(patchwork)
+library(knitr)
+```
+
+```{r load-data, include=FALSE}
+df <- read_csv("listening-history-clean.csv", show_col_types = FALSE) |>
+  mutate(
+    date        = ymd(date),
+    month_label = ym(month_label),
+    day_of_week = factor(day_of_week,
+                         levels = c("Monday","Tuesday","Wednesday",
+                                    "Thursday","Friday","Saturday","Sunday")),
+    platform_clean = case_when(
+      str_detect(platform, "android") ~ "Android",
+      str_detect(platform, "osx|mac") ~ "Mac",
+      str_detect(platform, "windows") ~ "Windows",
+      str_detect(platform, "cast|yamaha|google") ~ "Cast / Speaker",
+      str_detect(platform, "chrome") ~ "Chrome",
+      str_detect(platform, "fuse|tilt") ~ "Apple Music",
+      TRUE ~ "Other"
+    ),
+    source_label = recode(source,
+                          "spotify"     = "Spotify",
+                          "apple_music" = "Apple Music")
+  )
+
+music <- df |> filter(!is_short_play)
+
+n_records <- nrow(music)
+n_artists <- n_distinct(music$artist_name)
+n_tracks  <- n_distinct(music$track_name)
+date_min  <- min(music$date)
+date_max  <- max(music$date)
+total_hrs <- round(sum(music$minutes_played) / 60, 0)
+n_spotify <- music |> filter(source == "spotify") |> nrow()
+n_apple   <- music |> filter(source == "apple_music") |> nrow()
+skip_pct  <- percent(mean(music$skipped), 0.1)
+shuf_pct  <- percent(mean(music$shuffle), 0.1)
+```
+
+---
+
+# Introduction
+
+People engage with music on a daily basis, yet other than the annual cultural event known as Spotify Wrapped, few ever examine their own listening behavior quantitatively — including me. Recently, I finally made the push to start owning my own music and maintaining my own music library, but in the process of deciding what music to buy by mindlessly doom-scrolling through my playlists like a kid flipping through a record bin with no intention of buying anything, I realized how little I knew about my own music tastes — what genres I like, my favorite artists, my favorite songs from said artists, what albums I like — despite music being an extremely large chunk of how I spend every day. The rest of the time, the music that people listen to is essentially a black box, where if you peeked inside, you'd find the Spotify algorithm hunched over a mixing board, belching out the most sonically identical songs to the ones you listened to just before, sealing the lid shut behind it. In my mind, music has become disposable — just some background noise that makes every day just a little less mundane, pumped through the speakers like elevator music for the soul. In my wish to change this and learn more about myself from a musical standpoint (and create a cool project), I decided to export my Spotify listening history from the inception of my account, now four years in, in an attempt to answer the question: Who am I?
+
+## Dataset
+
+This analysis combines two sources of personal streaming data: an extended streaming history export from Spotify (requested via spotify.com/account/privacy) and a play activity export from Apple Music (requested via privacy.apple.com). Both exports were cleaned and merged using Python and the `pandas` library. Listens under 30 seconds were excluded as they typically represent accidental taps or autoplay noise rather than intentional listening. The resulting dataset spans **`r date_min`** to **`r date_max`**, comprising **`r format(n_records, big.mark=",")`** listens across **`r format(n_artists, big.mark=",")`** unique artists and **`r format(n_tracks, big.mark=",")`** unique tracks, totaling **`r format(total_hrs, big.mark=",")`** hours — of which `r format(n_spotify, big.mark=",")` records are from Spotify and `r format(n_apple, big.mark=",")` from Apple Music. Genre tags were sourced from the Apple Music library export, which contained metadata for 9,326 tracks, achieving 90.5% genre coverage across the combined dataset. Genres were normalized from 68 raw tags into 12 broad buckets (e.g., "Hip-Hop/Rap," "Trap," and "Drill" all mapped to "Rap & Hip-Hop").
+
+## Research Questions
+
+In this journey to learn about my "sonic self," this project seeks to answer four questions:
+
+1. **Temporal patterns** — How has my total listening volume trended over time, and when during the day and week do I listen most?
+2. **Engagement** — Which artists and tracks do I engage with most deeply, and which do I most often skip?
+3. **Taste evolution** — How have my artist and genre preferences shifted across distinct time periods?
+4. **Platform behavior** — Do my listening habits differ meaningfully between Spotify and Apple Music?
+
+I anticipate that behavioral signals like skip rate and average play duration will tell a more honest story than raw play counts alone, and that the era analysis will reveal distinct phases of musical taste corresponding to different periods of life.
+
+---
+
+# Results
+
+All analysis was performed in R (R Core Team, 2024) using the `tidyverse` suite (Wickham et al., 2019), `lubridate` (Grolemund & Wickham, 2011), `scales`, and `patchwork`. Descriptive summaries, time series aggregation, skip rate analysis, and stacked area charts were the primary methods used. Skip rate analysis was restricted to artists with at least 20 plays to guard against small-sample noise.
+
+## Research Question 1: Temporal Patterns
+
+```{r rq1-plots, fig.height=5.5, fig.cap="Top: Monthly listening hours by source, with an overall smoothed trend. Bottom: Play count by hour of day and day of week."}
+monthly <- music |>
+  group_by(month_label, source_label) |>
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop")
+
+p_monthly <- ggplot(monthly, aes(month_label, hours, fill = source_label)) +
+  geom_col() +
+  geom_smooth(
+    data = music |>
+      group_by(month_label) |>
+      summarise(hours = sum(minutes_played) / 60, .groups = "drop"),
+    aes(month_label, hours),
+    inherit.aes = FALSE,
+    se = FALSE, color = "white", linewidth = 0.7
+  ) +
+  scale_fill_manual(values = c("Spotify" = "#1DB954", "Apple Music" = "#FC3C44")) +
+  scale_x_date(date_labels = "%b '%y", date_breaks = "3 months") +
+  labs(x = NULL, y = "Hours", fill = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(axis.text.x    = element_text(angle = 45, hjust = 1),
+        legend.position = "top")
+
+heatmap_data <- music |>
+  count(day_of_week, hour) |>
+  complete(day_of_week, hour = 0:23, fill = list(n = 0))
+
+p_heatmap <- ggplot(heatmap_data, aes(hour, day_of_week, fill = n)) +
+  geom_tile(color = "white", linewidth = 0.25) +
+  scale_fill_gradient(low = "#1a1a2e", high = "#1DB954") +
+  scale_x_continuous(breaks = c(0, 6, 12, 18, 23),
+                     labels = c("12 am","6 am","12 pm","6 pm","11 pm")) +
+  labs(x = "Hour of day", y = NULL, fill = "Plays") +
+  theme_minimal(base_size = 11)
+
+p_monthly / p_heatmap
+```
+
+Monthly listening volume shows clear variation over the study period, with the smoothed trend revealing periods of heightened and diminished engagement. The transition from Spotify (green) to Apple Music (red) is visible in the later months of the timeline. The heatmap below exposes consistent behavioral structure: listening concentrates heavily in the late afternoon and evening hours (roughly 4 PM–midnight), with the highest density on weekday evenings — consistent with end-of-day wind-down and late-night study sessions. Weekend mornings show a noticeably lighter footprint, suggesting that weekends involve less passive background listening.
+
+## Research Question 2: Engagement — Who Do I Actually Listen To?
+
+```{r rq2-top, fig.height=5, fig.cap="Left: Top 15 artists by total hours played. Right: Top 15 tracks by play count. Hours-based ranking gives a more honest picture of engagement than play count alone."}
+top_artists <- music |>
+  group_by(artist_name) |>
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
+  slice_max(hours, n = 15)
+
+top_tracks <- music |>
+  group_by(track_name, artist_name) |>
+  summarise(plays = n(), .groups = "drop") |>
+  mutate(label = paste0(track_name, "\n(", artist_name, ")")) |>
+  slice_max(plays, n = 15)
+
+p_artists <- ggplot(top_artists, aes(hours, fct_reorder(artist_name, hours))) +
+  geom_col(fill = "#1DB954") +
+  geom_text(aes(label = round(hours, 1)), hjust = -0.1, size = 2.8) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.18))) +
+  labs(title = "Top 15 Artists", x = "Hours", y = NULL) +
+  theme_minimal(base_size = 9)
+
+p_tracks <- ggplot(top_tracks, aes(plays, fct_reorder(label, plays))) +
+  geom_col(fill = "#1DB954") +
+  geom_text(aes(label = plays), hjust = -0.1, size = 2.5) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.18))) +
+  labs(title = "Top 15 Tracks", x = "Plays", y = NULL) +
+  theme_minimal(base_size = 8)
+
+p_artists + p_tracks
+```
+
+Ranking artists by total hours played rather than raw play count gives a more honest measure of genuine engagement — an artist with shorter average track lengths would be unfairly penalized by a play-count ranking. The top artists chart reveals the clear long-term anchors of the library: artists that appear here have accumulated not just many plays but many *minutes*, meaning songs were actually listened to rather than skipped. The top tracks chart identifies the songs returned to most obsessively across the full four-year span.
+
+```{r rq2-skip, fig.height=4, fig.cap="Left: Most-skipped artists among those with at least 20 plays. Right: Artist engagement scatter — hours played vs skip rate, with bubble size proportional to total plays. Top 10 artists by hours labelled."}
+skip_by_artist <- music |>
+  group_by(artist_name) |>
+  summarise(plays     = n(),
+            skip_rate = mean(skipped),
+            hours     = sum(minutes_played) / 60,
+            .groups   = "drop") |>
+  filter(plays >= 20)
+
+p_skips <- skip_by_artist |>
+  slice_max(skip_rate, n = 12) |>
+  ggplot(aes(skip_rate, fct_reorder(artist_name, skip_rate))) +
+  geom_col(fill = "#E13300") +
+  geom_text(aes(label = percent(skip_rate, 1)), hjust = -0.1, size = 3) +
+  scale_x_continuous(labels = percent,
+                     expand  = expansion(mult = c(0, 0.18))) +
+  labs(title = "Most-Skipped Artists", x = "Skip rate", y = NULL) +
+  theme_minimal(base_size = 9)
+
+p_engagement <- ggplot(skip_by_artist, aes(hours, skip_rate)) +
+  geom_point(aes(size = plays), alpha = 0.55, color = "#1DB954") +
+  geom_text(
+    data = skip_by_artist |> slice_max(hours, n = 10),
+    aes(label = artist_name), size = 2.3, vjust = -0.9
+  ) +
+  scale_y_continuous(labels = percent) +
+  scale_size_continuous(range = c(1.5, 9)) +
+  labs(title = "Hours vs Skip Rate",
+       x = "Hours played", y = "Skip rate", size = "Plays") +
+  theme_minimal(base_size = 9)
+
+p_skips + p_engagement
+```
+
+The skip rate chart surfaces artists whose music gets queued out of habit rather than genuine enthusiasm — a signal of passive listening. The engagement scatter tells a richer story: artists in the top-right quadrant (high hours, high skip rate) are consumed in large quantities but finished far less reliably, suggesting a relationship built more on familiarity than active appreciation. Artists in the bottom-right (high hours, low skip rate) represent the true core of the library — music that, once started, is almost always seen through to the end. The overall skip rate across the dataset was `r skip_pct`, and `r shuf_pct` of all listens occurred on shuffle.
+
+## Research Question 3: Taste Evolution Over Time
+
+```{r rq3-plots, fig.height=5.5, fig.cap="Top: Top 5 artists by hours in each 6-month window. Bottom: Genre share of listening by 6-month window."}
+era_data <- music |>
+  mutate(half_year = floor_date(date, "6 months")) |>
+  group_by(half_year, artist_name) |>
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
+  group_by(half_year) |>
+  slice_max(hours, n = 5) |>
+  ungroup()
+
+p_era <- ggplot(era_data, aes(half_year, hours, fill = artist_name)) +
+  geom_col(position = "stack") +
+  scale_x_date(date_labels = "%b '%y", date_breaks = "6 months") +
+  labs(x = NULL, y = "Hours", fill = "Artist") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "right",
+        legend.text     = element_text(size = 6),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x     = element_text(angle = 45, hjust = 1))
+
+genre_era <- music |>
+  filter(genre != "Other") |>
+  mutate(half_year = floor_date(date, "6 months")) |>
+  group_by(half_year, genre) |>
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
+  group_by(half_year) |>
+  mutate(pct = hours / sum(hours)) |>
+  ungroup()
+
+p_genre_era <- ggplot(genre_era, aes(half_year, pct, fill = genre)) +
+  geom_area(position = "stack") +
+  scale_x_date(date_labels = "%b '%y", date_breaks = "6 months") +
+  scale_y_continuous(labels = percent) +
+  labs(x = NULL, y = "Share of listening", fill = "Genre") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "right",
+        legend.text     = element_text(size = 6),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x     = element_text(angle = 45, hjust = 1))
+
+p_era / p_genre_era
+```
+
+The era chart reveals the distinct "phases" of musical life across the four-year span. Artists that dominate a single window and then vanish mark discovery periods — a burst of enthusiasm followed by saturation. Artists that recur across multiple windows are the true long-term fixtures of the library. The genre area chart below provides the broader structural view: the relative balance of Rap & Hip-Hop, Pop, and R&B/Soul over time, and whether any period saw a meaningful stylistic pivot toward or away from a genre. Taken together, these two panels answer the question of not just *who* was listened to, but *when* and in *what context* of taste.
+
+## Research Question 4: Platform Comparison
+
+```{r rq4-table}
+platform_tbl <- music |>
+  group_by(source_label) |>
+  summarise(
+    Plays            = format(n(), big.mark = ","),
+    Hours            = round(sum(minutes_played) / 60, 1),
+    `Avg Min / Play` = round(mean(minutes_played), 2),
+    `Skip Rate`      = percent(mean(skipped), 0.1),
+    .groups = "drop"
+  ) |>
+  rename(Source = source_label)
+
+kable(platform_tbl,
+      caption = "Listening behavior comparison: Spotify vs Apple Music.",
+      align   = c("l","r","r","r","r"),
+      booktabs = TRUE)
+```
+
+```{r rq4-platform-bar, fig.height=2.8, fig.cap="Total listening hours by device platform across both services."}
+platform_summary <- music |>
+  group_by(platform_clean) |>
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
+  arrange(desc(hours))
+
+ggplot(platform_summary,
+       aes(hours, fct_reorder(platform_clean, hours), fill = platform_clean)) +
+  geom_col() +
+  geom_text(aes(label = round(hours, 0)), hjust = -0.1, size = 3.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "Hours", y = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "none")
+```
+
+The platform comparison table reveals whether Spotify and Apple Music produced meaningfully different listening patterns. Differences in average minutes per play and skip rate between the two services may reflect distinct interface designs and recommendation algorithms — or they may simply reflect the different periods of life during which each was used, making direct causal attribution difficult. The device breakdown chart further contextualizes where listening happens physically: Android and Mac dominate, with Cast/Speaker representing passive background listening that is likely undercounted in skip and completion metrics since casting sessions are harder to deliberately skip.
+
+---
+
+# Conclusion
+
+## Summary
+
+This analysis transformed over four years of personal streaming history into a quantitative portrait of musical identity. Monthly listening trends revealed clear ebbs and flows in engagement, while the temporal heatmap confirmed that late-evening weekday listening is the dominant behavioral signature. The top artist and track rankings established the true long-term anchors of the library, while the skip rate and engagement scatter provided an honest counterpoint — surfacing artists consumed out of habit rather than genuine enthusiasm. The era and genre evolution charts told the story of a listener whose taste has shifted meaningfully over time, with distinct phases visible in both artist dominance and genre balance.
+
+## Critique of Methods
+
+Several limitations are worth acknowledging. The `skipped` field in Spotify's export is inconsistently populated and known to undercount skips; the supplementary `reason_end` flag partially addresses this but only captures explicit button-press skips. Play counts and hours played cannot distinguish active from passive listening — a song playing in the background during a study session is recorded identically to one listened to with full attention. The platform comparison is confounded by time: Spotify and Apple Music were used during different life periods, making it difficult to separate platform-specific effects from life-stage effects.
+
+## Reliability and Validity
+
+Both datasets were exported directly from the platforms, making them highly reliable records of what was logged. However, validity is constrained by what each platform chooses to capture. Spotify does not export full track duration, preventing exact completion rate calculations for that dataset. Listening in Spotify's incognito mode is not recorded, introducing an unquantifiable gap. Genre data was sourced from the Apple Music library rather than a canonical music database, meaning genre assignments reflect Apple's taxonomy rather than an independent standard.
+
+## Future Directions
+
+Several natural extensions exist. Enriching the dataset with audio features (tempo, valence, energy) via the Spotify Web API would enable mood-based clustering — asking not just *who* was listened to, but *how it felt*. Overlaying academic calendar dates could reveal whether listening behavior shifts during exam periods versus breaks. Finally, incorporating lyrics-based sentiment analysis could explore whether emotional valence in music choices correlates with time of year or time of day.
+
+---
+
+# References
+
+Grolemund, G., & Wickham, H. (2011). Dates and times made easy with lubridate. *Journal of Statistical Software, 40*(3), 1–25. https://doi.org/10.18637/jss.v040.i03
+
+McKinney, W. (2010). Data structures for statistical computing in Python. *Proceedings of the 9th Python in Science Conference*, 51–56. https://doi.org/10.25080/Majora-92bf1922-00a
+
+R Core Team. (2024). *R: A language and environment for statistical computing.* R Foundation for Statistical Computing. https://www.R-project.org/
+
+Wickham, H., Averick, M., Bryan, J., Chang, W., McGowan, L. D., François, R., Grolemund, G., Hayes, A., Henry, L., Hester, J., Kuhn, M., Pedersen, T. L., Miller, E., Bache, S. M., Müller, K., Ooms, J., Robinson, D., Seidel, D. P., Spinu, V., … Yutani, H. (2019). Welcome to the tidyverse. *Journal of Open Source Software, 4*(43), 1686. https://doi.org/10.21105/joss.01686
