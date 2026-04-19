@@ -102,6 +102,13 @@ apple-music-library-tracks.json
 apple-music-play-activity.csv
 listening-history-clean.csv
 
+# Manim / Manim Slides generated media
+**/media/
+**/partial_movie_files/
+**/slides/files/
+**/media/**/*.json
+**/slides/*.json
+
 
 # API keys / secrets (never commit these)
 secrets.py
