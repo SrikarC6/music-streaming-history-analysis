@@ -29,12 +29,13 @@ library(lubridate)
 library(scales)
 library(patchwork)
 library(knitr)
+library(ggrepel)
 ```
 
 ```{r load-data, include=FALSE}
 df <- read_csv("listening-history-clean.csv", show_col_types = FALSE) |>
   mutate(
-    date        = ymd(date),
+    date = ymd(date),
     month_label = ym(month_label),
     day_of_week = factor(day_of_week,
                          levels = c("Monday","Tuesday","Wednesday",
@@ -71,7 +72,7 @@ shuf_pct  <- percent(mean(music$shuffle), 0.1)
 
 # Introduction
 
-People engage with music on a daily basis, yet other than the annual cultural event known as Spotify Wrapped, few ever examine their own listening behavior quantitatively — including me. Recently, I finally made the push to start owning my own music and maintaining my own music library, but in the process of deciding what music to buy by mindlessly doom-scrolling through my playlists like a kid flipping through a record bin with no intention of buying anything, I realized how little I knew about my own music tastes — what genres I like, my favorite artists, my favorite songs from said artists, what albums I like — despite music being an extremely large chunk of how I spend every day. The rest of the time, the music that people listen to is essentially a black box, where if you peeked inside, you'd find the Spotify algorithm hunched over a mixing board, belching out the most sonically identical songs to the ones you listened to just before, sealing the lid shut behind it. In my mind, music has become disposable — just some background noise that makes every day just a little less mundane, pumped through the speakers like elevator music for the soul. In my wish to change this and learn more about myself from a musical standpoint (and create a cool project), I decided to export my Spotify listening history from the inception of my account, now four years in, in an attempt to answer the question: Who am I?
+People engage with music on a daily basis, yet other than the annual cultural event known as Spotify Wrapped, few ever examine their own listening behavior quantitatively — including me. Recently, I finally made the push to start owning my own music and maintaining my own music library, but in the process of deciding what music to buy by scrolling through my playlists, I realized how little I knew about my own music tastes — what genres I like, my favorite artists, my favorite songs from said artists, even naming a single album from their discography — despite music being an extremely large chunk of how I spend every day. The rest of the time, the music that people listen to is essentially a black box, where if you peeked inside, you'd find the Spotify algorithm - a bot whose sole goal is to rack up the minutes you listen on their platform — belching out the most sonically identical songs to the ones you listened to just before to keep you continually engaged. In my mind, music has become disposable — just some background noise that makes every day just a little less mundane than the one before it. In my wish to change this and learn more about myself from a musical standpoint (and create a cool project), I decided to export my Spotify and Apple Music listening history from the inception of my account, now four years in, in an attempt to answer the question: What is my sonic self?
 
 ## Dataset
 
@@ -109,7 +110,7 @@ p_monthly <- ggplot(monthly, aes(month_label, hours, fill = source_label)) +
       summarise(hours = sum(minutes_played) / 60, .groups = "drop"),
     aes(month_label, hours),
     inherit.aes = FALSE,
-    se = FALSE, color = "white", linewidth = 0.7
+    se = FALSE, color = "black", linewidth = 0.7
   ) +
   scale_fill_manual(values = c("Spotify" = "#1DB954", "Apple Music" = "#FC3C44")) +
   scale_x_date(date_labels = "%b '%y", date_breaks = "3 months") +
@@ -133,7 +134,7 @@ p_heatmap <- ggplot(heatmap_data, aes(hour, day_of_week, fill = n)) +
 p_monthly / p_heatmap
 ```
 
-Monthly listening volume shows clear variation over the study period, with the smoothed trend revealing periods of heightened and diminished engagement. The transition from Spotify (green) to Apple Music (red) is visible in the later months of the timeline. The heatmap below exposes consistent behavioral structure: listening concentrates heavily in the late afternoon and evening hours (roughly 4 PM–midnight), with the highest density on weekday evenings — consistent with end-of-day wind-down and late-night study sessions. Weekend mornings show a noticeably lighter footprint, suggesting that weekends involve less passive background listening.
+The first plot - showing monthly listening volume - displays clear variation over the study period, with the smoothed trendline revealing periods of heightened and diminished engagement; This visual shows that from my streaming beginnings, my overall music listening has went down drastically, hitting a low in December 2024, but has began to gradually increase from that low point. The transition from Spotify (green) to Apple Music (red) is visible in the much later months of the timeline. The heatmap below exposes consistent behavioral structure: listening concentrates heavily in the late afternoon and evening hours (roughly 4 PM–midnight), with the highest density on weekday evenings. This perfectly coincides with my end-of-day wind-down and late-night study sessions. Weekend mornings show a noticeably lighter footprint, suggesting that weekends involve less passive background listening, which perfectly reflects my weekend routine of the past few years
 
 ## Research Question 2: Engagement — Who Do I Actually Listen To?
 
@@ -189,17 +190,14 @@ p_skips <- skip_by_artist |>
 
 p_engagement <- ggplot(skip_by_artist, aes(hours, skip_rate)) +
   geom_point(aes(size = plays), alpha = 0.55, color = "#1DB954") +
-  geom_text(
-    data = skip_by_artist |> slice_max(hours, n = 10),
-    aes(label = artist_name), size = 2.3, vjust = -0.9
-  ) +
-  scale_y_continuous(labels = percent) +
+  geom_text_repel(data = skip_by_artist |> slice_max(hours, n = 10), aes(label = artist_name), size = 2.5, box.padding = 0.8, point.padding = 0.5, max.overlaps = Inf, segment.color = "grey40", segment.size = 0.4, force = 8, force_pull = 0.1, nudge_x = 50, direction = "y", hjust = 0, min.segment.length = 0, arrow = arrow(length = unit(0.008, "npc"), type = "open")) +
+  scale_y_continuous(labels = percent, transform = "sqrt", breaks = c(0, 0.10, 0.25, 0.50, 0.75, 1.0), expand = expansion(mult = c(0.02, 0.08))) +
   scale_size_continuous(range = c(1.5, 9)) +
   labs(title = "Hours vs Skip Rate",
        x = "Hours played", y = "Skip rate", size = "Plays") +
   theme_minimal(base_size = 9)
 
-p_skips + p_engagement
+p_skips + p_engagement + plot_layout(widths = c(1.75, 3))
 ```
 
 The skip rate chart surfaces artists whose music gets queued out of habit rather than genuine enthusiasm — a signal of passive listening. The engagement scatter tells a richer story: artists in the top-right quadrant (high hours, high skip rate) are consumed in large quantities but finished far less reliably, suggesting a relationship built more on familiarity than active appreciation. Artists in the bottom-right (high hours, low skip rate) represent the true core of the library — music that, once started, is almost always seen through to the end. The overall skip rate across the dataset was `r skip_pct`, and `r shuf_pct` of all listens occurred on shuffle.
@@ -287,7 +285,7 @@ ggplot(platform_summary,
   theme(legend.position = "none")
 ```
 
-The platform comparison table reveals whether Spotify and Apple Music produced meaningfully different listening patterns. Differences in average minutes per play and skip rate between the two services may reflect distinct interface designs and recommendation algorithms — or they may simply reflect the different periods of life during which each was used, making direct causal attribution difficult. The device breakdown chart further contextualizes where listening happens physically: Android and Mac dominate, with Cast/Speaker representing passive background listening that is likely undercounted in skip and completion metrics since casting sessions are harder to deliberately skip.
+The platform comparison table reveals whether Spotify and Apple Music produced meaningfully different listening patterns. Differences in average minutes per play and skip rate between the two services may reflect distinct interface designs and recommendation algorithms — or they may simply reflect the different periods of life during which each was used, making direct causal attribution difficult. The device breakdown chart further contextualizes where listening happens physically: Android and Mac dominate, with Cast/Speaker representing passive background listening that is likely under-counted in skip and completion metrics since casting sessions are harder to deliberately skip.
 
 ---
 
