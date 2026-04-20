@@ -6,18 +6,29 @@ from scipy.ndimage import gaussian_filter1d
 from datetime import datetime
 from itertools import product as iproduct
 
-Text.set_default(font="Baskerville")
+baskerville_template = TexTemplate(
+    tex_compiler="xelatex",
+    output_format=".xdv",
+)
+baskerville_template.add_to_preamble(r"\usepackage{fontspec}")
+baskerville_template.add_to_preamble(r"\setmainfont{Baskerville}")
+Tex.set_default(tex_template=baskerville_template)
+
+GLOBAL_DF = pd.read_csv("/Users/srikarc/College/sp-26/stt-180/ho-stt-180/Code/listening-history-clean.csv")
+GLOBAL_DF = GLOBAL_DF[GLOBAL_DF['is_short_play'] == False]
+for col in ['artist_name', 'track_name', 'album_name']:
+    GLOBAL_DF[col] = GLOBAL_DF[col].astype(str).str.replace("&", r"\&").str.replace("$", r"\$").str.replace("%", r"\%")
 
 class Presentation(Slide):
     def construct(self):
 
         # ---------------- Slide 1 ----------------
-        title1 = Text('Music Analytics').scale(2)
+        title1 = Tex('Music Analytics').scale(2)
 
-        caption1 = Text('Understanding my "Sonic Self"', font_size=40)
+        caption1 = Tex('Understanding my "Sonic Self"', font_size=40)
         caption1.next_to(title1, direction=DOWN)
 
-        author = Text('Srikar Chitturi', font_size=40)
+        author = Tex('Srikar Chitturi', font_size=40)
         author.next_to(title1, direction=DOWN)
 
         self.play(FadeIn(title1))
@@ -33,11 +44,11 @@ class Presentation(Slide):
 
 
         # ---------------- Slide 2 ----------------
-        title2 = Text('Introduction').scale(1.5).to_corner(UL)
+        title2 = Tex('Introduction').scale(1.5).to_corner(UL)
 
-        bullet21 = Text('• Moving away from streaming', font_size=28)
-        bullet22 = Text('• Realized I don\'t know a lot about my music tastes', font_size=28)
-        bullet23 = Text('• Want to learn more about the music I like over the last 4 years', font_size=28)
+        bullet21 = Tex('• Moving away from streaming', font_size=28)
+        bullet22 = Tex('• Realized I don\'t know a lot about my music tastes', font_size=28)
+        bullet23 = Tex('• Want to learn more about the music I like over the last 4 years', font_size=28)
         bullets2 = VGroup(bullet21, bullet22, bullet23).arrange(DOWN, aligned_edge=LEFT, buff=0.4)
         bullets2.next_to(title2, direction=DOWN, buff=0.5).align_to(title2, LEFT)
 
@@ -70,19 +81,19 @@ class Presentation(Slide):
 
 
         # ---------------- Slide 3 ----------------
-        title3 = Text('Questions to Answer').scale(1.5).to_corner(UL)
+        title3 = Tex('Questions to Answer').scale(1.5).to_corner(UL)
         self.wipe([title2, bullets2], title3)
 
-        bullet311 = Text('1. How has my total listening volume trended over time, and when during the', font_size=28)
-        bullet312 = Text('day and week do I listen most?', font_size=28).next_to(bullet311, direction=DOWN, buff=0.15, aligned_edge=LEFT)
+        bullet311 = Tex('1. How has my total listening volume trended over time, and when during the', font_size=28)
+        bullet312 = Tex('day and week do I listen most?', font_size=28).next_to(bullet311, direction=DOWN, buff=0.15, aligned_edge=LEFT)
         bullet31 = VGroup(bullet311, bullet312)
 
-        bullet321 = Text('2. Which artists and tracks do I engage with most deeply, and which do I skip', font_size=28)
-        bullet322 = Text('the most often?', font_size=28).next_to(bullet321, direction=DOWN, buff=0.15, aligned_edge=LEFT)
+        bullet321 = Tex('2. Which artists and tracks do I engage with most deeply, and which do I skip', font_size=28)
+        bullet322 = Tex('the most often?', font_size=28).next_to(bullet321, direction=DOWN, buff=0.15, aligned_edge=LEFT)
         bullet32 = VGroup(bullet321, bullet322)
 
-        bullet33 = Text('3. How have my artist and genre preferences shifted across distinct time periods?', font_size=28)
-        bullet34 = Text('4. Do my listening habits differ meaningfully between Spotify and Apple Music?', font_size=28)
+        bullet33 = Tex('3. How have my artist and genre preferences shifted across distinct time periods?', font_size=28)
+        bullet34 = Tex('4. Do my listening habits differ meaningfully between Spotify and Apple Music?', font_size=28)
 
         bullets3 = VGroup(bullet31, bullet32, bullet33, bullet34).arrange(DOWN, aligned_edge=LEFT, buff=0.5)
         bullets3.next_to(title3, direction=DOWN, buff=0.5).align_to(title3, LEFT)
@@ -101,7 +112,7 @@ class Presentation(Slide):
 
 
         # ---------------- Slide 4 ----------------
-        title4 = Text("How?").scale(2)
+        title4 = Tex("How?").scale(2)
         diagram_shift = RIGHT
 
         self.next_slide()
@@ -165,7 +176,7 @@ class Presentation(Slide):
 
         rq_labels = ["RQ1", "RQ2", "RQ3", "RQ4"]
         text_group = VGroup(*[
-            Text(rq_labels[i], font_size=28).next_to(arrow.get_end(), RIGHT, buff=0.1)
+            Tex(rq_labels[i], font_size=28).next_to(arrow.get_end(), RIGHT, buff=0.1)
             for i, arrow in enumerate(arrows43)
         ])
         self.play(Write(text_group))
@@ -175,20 +186,18 @@ class Presentation(Slide):
 
 
         # ---------------- Slide 5.1 ----------------
-        title5 = Text("RQ1: Temporal Patterns").to_corner(UL)
+        title5 = Tex("RQ1: Temporal Patterns").to_corner(UL)
         self.play(FadeOut(Group(*self.mobjects)))
         self.play(FadeIn(title5))
 
         self.next_slide()
 
         # --- Data ---
-        df = pd.read_csv("/Users/srikarc/College/sp-26/stt-180/ho-stt-180/Code/listening-history-clean.csv")
-        df = df[df['is_short_play'] == False]
-        df['hours'] = df['minutes_played'] / 60
-        df['source_label'] = df['source'].replace({"spotify": "Spotify", "apple_music": "Apple Music"})
+        GLOBAL_DF['hours'] = GLOBAL_DF['minutes_played'] / 60
+        GLOBAL_DF['source_label'] = GLOBAL_DF['source'].replace({"spotify": "Spotify", "apple_music": "Apple Music"})
 
-        monthly = df.groupby(['month_label', 'source_label'])['hours'].sum().unstack(fill_value=0)
-        if 'Spotify' not in monthly.columns:     monthly['Spotify'] = 0
+        monthly = GLOBAL_DF.groupby(['month_label', 'source_label'])['hours'].sum().unstack(fill_value=0)
+        if 'Spotify' not in monthly.columns: monthly['Spotify'] = 0
         if 'Apple Music' not in monthly.columns: monthly['Apple Music'] = 0
 
         total_vals = monthly.sum(axis=1).values
@@ -197,11 +206,11 @@ class Presentation(Slide):
 
         # --- Legend ---
         apple_box  = Square(side_length=0.2, fill_color="#FC3C44", fill_opacity=1, stroke_width=0)
-        apple_text = Text("Apple Music", font_size=20)
+        apple_text = Tex("Apple Music", font_size=20)
         apple_leg  = VGroup(apple_box, apple_text).arrange(RIGHT, buff=0.15)
 
         spot_box  = Square(side_length=0.2, fill_color="#1DB954", fill_opacity=1, stroke_width=0)
-        spot_text = Text("Spotify", font_size=20)
+        spot_text = Tex("Spotify", font_size=20)
         spot_leg  = VGroup(spot_box, spot_text).arrange(RIGHT, buff=0.15)
 
         legend = VGroup(apple_leg, spot_leg).arrange(RIGHT, buff=0.8)
@@ -219,7 +228,7 @@ class Presentation(Slide):
             y_axis_config={"numbers_to_include": np.arange(0, y_max + 1, 20)}
         )
 
-        y_label = Text("Hours", font_size=22).rotate(90 * DEGREES).next_to(axes, LEFT, buff=0.35)
+        y_label = Tex("Hours", font_size=22).rotate(90 * DEGREES).next_to(axes, LEFT, buff=0.35)
 
         plot_base = VGroup(axes, y_label)
         plot_base.next_to(legend, DOWN, buff=0.25).set_x(0)
@@ -274,7 +283,7 @@ class Presentation(Slide):
                 x_ticks.add(tick)
 
                 dt = datetime.strptime(month, "%Y-%m")
-                lbl = Text(dt.strftime("%b '%y"), font_size=15)
+                lbl = Tex(dt.strftime("%b '%y"), font_size=15)
                 lbl.next_to(tick.get_bottom(), DOWN, buff=0.08)
                 lbl.rotate(45 * DEGREES, about_point=lbl.get_corner(UR))
                 lbl.shift(LEFT * 0.28)
@@ -307,10 +316,10 @@ class Presentation(Slide):
         # --- Data ---
         day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-        heatmap_raw  = df.groupby(['day_of_week', 'hour']).size().reset_index(name='n')
+        heatmap_raw  = GLOBAL_DF.groupby(['day_of_week', 'hour']).size().reset_index(name='n')
         complete_idx = pd.DataFrame(list(iproduct(day_order, range(24))), columns=['day_of_week', 'hour'])
-        heatmap_df   = complete_idx.merge(heatmap_raw, on=['day_of_week', 'hour'], how='left').fillna(0)
-        pivot        = heatmap_df.pivot(index='day_of_week', columns='hour', values='n').reindex(day_order)
+        heatmap_df5   = complete_idx.merge(heatmap_raw, on=['day_of_week', 'hour'], how='left').fillna(0)
+        pivot        = heatmap_df5.pivot(index='day_of_week', columns='hour', values='n').reindex(day_order)
         n_max        = float(pivot.values.max())
 
         low_c  = ManimColor("#1a1a2e")
@@ -341,7 +350,7 @@ class Presentation(Slide):
         # --- Y-axis labels ---
         y_labels = VGroup()
         for ri, day in enumerate(day_order):
-            lbl = Text(day, font_size=15)
+            lbl = Tex(day, font_size=15)
             lbl.move_to([
                 -grid_w/2 - lbl.width/2 - 0.18,
                 -grid_h/2 + (ri + 0.5) * cell_h,
@@ -352,7 +361,7 @@ class Presentation(Slide):
         # --- X-axis labels ---
         x_labels = VGroup()
         for hour, label_str in {0: "12 am", 6: "6 am", 12: "12 pm", 18: "6 pm", 23: "11 pm"}.items():
-            lbl = Text(label_str, font_size=15)
+            lbl = Tex(label_str, font_size=15)
             lbl.move_to([
                 -grid_w/2 + (hour + 0.5) * cell_w,
                 -grid_h/2 - 0.32,
@@ -360,7 +369,7 @@ class Presentation(Slide):
             ])
             x_labels.add(lbl)
 
-        x_axis_title = Text("Hour of day", font_size=18).move_to([0, -grid_h/2 - 0.68, 0])
+        x_axis_title = Tex("Hour of day", font_size=18).move_to([0, -grid_h/2 - 0.68, 0])
 
         # --- Colorbar ---
         bar_x = grid_w/2 + 1.15
@@ -383,7 +392,7 @@ class Presentation(Slide):
             stroke_color=WHITE, stroke_width=1.5, fill_opacity=0
         ).move_to([bar_x, 0, 0])
 
-        plays_title = Text("Plays", font_size=16).move_to([bar_x, grid_h/2 + 0.32, 0])
+        plays_title = Tex("Plays", font_size=16).move_to([bar_x, grid_h/2 + 0.32, 0])
 
         cb_ticks = VGroup()
         v = 0
@@ -395,7 +404,7 @@ class Presentation(Slide):
                 [bar_x + bar_w/2 + 0.13, y_p, 0],
                 color=WHITE, stroke_width=1.5
             )
-            lbl = Text(str(int(v)), font_size=13).next_to(tick, RIGHT, buff=0.07)
+            lbl = Tex(str(int(v)), font_size=13).next_to(tick, RIGHT, buff=0.07)
             cb_ticks.add(tick, lbl)
             v += 50
 
@@ -411,18 +420,16 @@ class Presentation(Slide):
             Write(plays_title), Write(cb_ticks)
         )
 
-        self.next_slide()
-
         # --- Observations ---
-        bullet50 = Text("Observations", font_size=30)
+        bullet50 = Tex("Observations", font_size=30)
         bullet50.next_to(x_axis_title, direction=DOWN, buff=0.15)
         bullet50.align_to(title5, LEFT)
 
         self.play(Write(bullet50))
 
-        bullet51 = Text("• Music listening has decreased to low point in December 2024, but has been gradually increasing since", font_size=19)
-        bullet52 = Text("• Most listening during late-afternoon to evening (4pm-12am)", font_size=19)
-        bullet53 = Text("• Highest listening density during weekday evenings, lowest during weekend mornings", font_size=19)
+        bullet51 = Tex("• Music listening has decreased to low point in December 2024, but has been gradually increasing since", font_size=19)
+        bullet52 = Tex("• Most listening during late-afternoon to evening (4pm-12am)", font_size=19)
+        bullet53 = Tex("• Highest listening density during weekday evenings, lowest during weekend mornings", font_size=19)
 
         bullets5 = VGroup(bullet51, bullet52, bullet53).arrange(DOWN, aligned_edge=LEFT, buff=0.2)
         bullets5.next_to(bullet50, direction=DOWN, buff=0.3).align_to(bullet50, LEFT)
@@ -435,11 +442,123 @@ class Presentation(Slide):
         # ---------------- Slide 5.2 ----------------
 
 
-        # ---------------- Slide 6 ----------------
-        self.wipe()
+        # ---------------- Slide 6.1 ----------------
+        title6 = Tex("RQ2: Engagement").to_corner(UL)
+        self.wipe(Group(*self.mobjects), title6)
 
-        title6 = Text("RQ2: ")
-        # ---------------- Slide 6 ----------------
-class Test(Scene):
+        # --- 1. DATA PREP ---
+        artist_hours = GLOBAL_DF.groupby('artist_name')['minutes_played'].sum() / 60
+        top_artists = artist_hours.nlargest(15).sort_values(ascending=True)
+        track_plays = GLOBAL_DF.groupby(['track_name', 'artist_name']).size().reset_index(name='plays')
+        top_tracks = track_plays.nlargest(15, 'plays').sort_values(by='plays', ascending=True)
+
+        max_hours = top_artists.max()
+        x_max_left = int(np.ceil(max_hours / 30) * 30)
+        
+        max_plays = top_tracks['plays'].max()
+        x_max_right = int(np.ceil(max_plays / 50) * 50)
+
+        # --- 2. EXPLICIT AXES POSITIONING (SHIFTED RIGHT) ---
+        ax_left = Axes(
+            x_range=[0, x_max_left + (x_max_left * 0.18), 30],
+            y_range=[0.5, 15.5, 1],
+            x_length=4.0,
+            y_length=5.0,
+            tips=False,
+            axis_config={"color": WHITE, "stroke_width": 2},
+            y_axis_config={"include_ticks": False, "include_numbers": False}
+        ).move_to([-2.6, -0.8, 0]) # Shifted right from -3.5 to prevent left cut-off
+
+        ax_right = Axes(
+            x_range=[0, x_max_right + (x_max_right * 0.18), 50],
+            y_range=[0.5, 15.5, 1],
+            x_length=4.0,
+            y_length=5.0,
+            tips=False,
+            axis_config={"color": WHITE, "stroke_width": 2},
+            y_axis_config={"include_ticks": False, "include_numbers": False}
+        ).move_to([4.2, -0.8, 0]) # Shifted right from 3.5 to fill the empty margin
+
+        # --- Titles & X-Axis Labels ---
+        title_left = Tex("Top 15 Artists", font_size=24).next_to(ax_left, UP, buff=0.4)
+        title_right = Tex("Top 15 Tracks", font_size=24).next_to(ax_right, UP, buff=0.4)
+        
+        x_label_left = Tex("Hours", font_size=20).next_to(ax_left, DOWN, buff=0.3)
+        x_label_right = Tex("Plays", font_size=20).next_to(ax_right, DOWN, buff=0.3)
+
+        # --- Vertical Gridlines ---
+        grid_lines = VGroup()
+        for x in range(30, int(x_max_left) + 1, 30):
+            grid_lines.add(Line(ax_left.c2p(x, 0.5), ax_left.c2p(x, 15.5), color=GRAY, stroke_opacity=0.3, stroke_width=1))
+        for x in range(50, int(x_max_right) + 1, 50):
+            grid_lines.add(Line(ax_right.c2p(x, 0.5), ax_right.c2p(x, 15.5), color=GRAY, stroke_opacity=0.3, stroke_width=1))
+
+        # --- Left Chart (Artists) ---
+        bars_left = VGroup()
+        labels_left = VGroup()
+        vals_left = VGroup()
+        bar_height = 0.28
+
+        for i, (artist, hours) in enumerate(top_artists.items(), start=1):
+            w = ax_left.c2p(hours, 0)[0] - ax_left.c2p(0, 0)[0]
+            
+            bar = Rectangle(width=w, height=bar_height, fill_color=PURPLE, fill_opacity=1, stroke_width=0)
+            bar.move_to(ax_left.c2p(hours / 2, i))
+            bars_left.add(bar)
+
+            lbl = Tex(artist, font_size=14).next_to(ax_left.c2p(0, i), LEFT, buff=0.15)
+            labels_left.add(lbl)
+
+            val = Tex(str(round(hours, 1)), font_size=14).next_to(bar, RIGHT, buff=0.1)
+            vals_left.add(val)
+
+        # --- Right Chart (Tracks) ---
+        bars_right = VGroup()
+        labels_right = VGroup()
+        vals_right = VGroup()
+
+        for i, row in enumerate(top_tracks.itertuples(), start=1):
+            plays = row.plays
+            w = ax_right.c2p(plays, 0)[0] - ax_right.c2p(0, 0)[0]
+            
+            bar = Rectangle(width=w, height=bar_height, fill_color=PURPLE, fill_opacity=1, stroke_width=0)
+            bar.move_to(ax_right.c2p(plays / 2, i))
+            bars_right.add(bar)
+
+            lbl_text = f"{row.track_name} ({row.artist_name})"
+            lbl = Tex(lbl_text, font_size=11).next_to(ax_right.c2p(0, i), LEFT, buff=0.15)
+            labels_right.add(lbl)
+
+            val = Tex(str(plays), font_size=14).next_to(bar, RIGHT, buff=0.1)
+            vals_right.add(val)
+
+        # --- Animate ---
+        self.play(
+            Create(ax_left), Create(ax_right),
+            Create(grid_lines),
+            Write(title_left), Write(title_right),
+            Write(x_label_left), Write(x_label_right),
+            Write(labels_left), Write(labels_right)
+        )
+        self.wait(0.5)
+        
+        self.play(
+            Create(bars_left), 
+            Create(bars_right), 
+            run_time=3
+        )
+        self.play(
+            Write(vals_left), 
+            Write(vals_right)
+        )
+
+        self.next_slide()
+        # ---------------- Slide 6.1 ----------------
+
+        # ---------------- Slide 6.2 ----------------
+        
+        # ---------------- Slide 6.2 ----------------
+
+class Test(Slide):
     def construct(self):
         pass
