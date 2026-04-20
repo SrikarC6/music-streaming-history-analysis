@@ -110,6 +110,7 @@ listening-history-clean.csv
 **/slides/*.json
 apple-music-icon.svg
 spotify-icon.svg
+lastfm-icon.svg
 
 # API keys / secrets (never commit these)
 secrets.py
