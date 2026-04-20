@@ -63,16 +63,19 @@ class Presentation(Slide):
 
         self.play(logos.animate.scale(0.5).to_corner(DR, buff=0.3))
         # ---------------- Slide 2 ----------------
+
+
+        # ---------------- Slide 3 ----------------
         title3 = Text('Questions to Answer').scale(1.5).to_corner(UL)
         self.wipe([title2, bullets2], title3)
 
         bullet311 = Text('1. How has my total listening volume trended over time, and when during the', font_size=28)
-        bullet312 = Text('day and week do I listen most?', font_size=28)
-        bullet31 = VGroup(bullet311, bullet312).arrange(direction=DOWN, buff=0.15, aligned_edge=bullet311)
+        bullet312 = Text('day and week do I listen most?', font_size=28).next_to(bullet311, direction=DOWN, buff=0.15, aligned_edge=LEFT)
+        bullet31 = VGroup(bullet311, bullet312)
 
         bullet321 = Text('2. Which artists and tracks do I engage with most deeply, and which do I skip', font_size=28)   
-        bullet322 = Text('the most often?', font_size=28)
-        bullet32 = VGroup(bullet321, bullet322).arrange(direction=DOWN, aligned_edge=bullet321, buff=0.15)
+        bullet322 = Text('the most often?', font_size=28).next_to(bullet321, direction=DOWN, buff=0.15, aligned_edge=LEFT)
+        bullet32 = VGroup(bullet321, bullet322)
         
         bullet33 = Text('3. How have my artist and genre preferences shifted across distinct time periods?', font_size=28)
         bullet34 = Text('4. Do my listening habits differ meaningfully between Spotify and Apple Music?', font_size=28)
@@ -96,7 +99,32 @@ class Presentation(Slide):
 
         self.play(FadeIn(bullet34, shift=UP))
         self.wait(0.2)
-        self.play(Indicate(spotify))
+        self.play(Circumscribe(spotify, color=WHITE))
         self.wait(0.3)
-        self.play(Indicate(apple_music))
+        self.play(Circumscribe(apple_music, color=WHITE))
+        # ---------------- Slide 3 ----------------
 
+
+        # ---------------- Slide 4 ----------------
+        title4 = Text("How?").scale(2)
+        lastfm = SVGMobject('lastfm-icon.svg').scale(0.8)
+
+        self.next_slide()
+
+        self.wipe([title3, bullets3], [title4])
+        self.wait()
+        self.play(title4.animate.scale(0.75).to_corner(UL))
+        self.wait(0.6)
+        self.play(
+            logos.animate
+            .arrange(DOWN, buff=0.8)
+            .scale(1.25)
+            .next_to(title4, direction=DOWN, buff=1.1)
+            .align_to(title4, LEFT)
+        )
+        self.wait(0.6)
+        lastfm.move_to(apple_music).match_height(apple_music)
+        self.play(ReplacementTransform(apple_music, lastfm))
+        self.wait(2)
+        self.play(ReplacementTransform(lastfm, apple_music))
+        
