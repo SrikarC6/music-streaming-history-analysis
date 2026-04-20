@@ -34,6 +34,8 @@ class Presentation(Slide):
 
         spotify = SVGMobject('spotify-icon.svg').scale(0.8)
         apple_music = SVGMobject('apple-music-icon.svg').scale(0.8)
+        apple_music[0].set_color("#FC3C44")
+        apple_music[1:].set_color(WHITE)
 
         logos = VGroup(spotify, apple_music).arrange(RIGHT, buff=0.6)
         logos.next_to(bullet23, direction=DOWN, buff=0.6)
@@ -44,19 +46,11 @@ class Presentation(Slide):
         self.next_slide()
 
         self.play(FadeIn(bullet21, shift=UP))
-
-        self.next_slide()
-
         self.play(FadeIn(bullet22, shift=UP))
-
-        self.next_slide()
-
         self.play(FadeIn(bullet23, shift=UP))
-
-        self.next_slide()
-
+        self.wait(0.5)
         self.play(Write(spotify))
-        self.wait(1)
+        self.wait(0.7)
         self.play(Write(apple_music))
 
         self.next_slide()
@@ -86,17 +80,8 @@ class Presentation(Slide):
         self.next_slide()
 
         self.play(FadeIn(bullet31, shift=UP))
-
-        self.next_slide()
-
         self.play(FadeIn(bullet32, shift=UP))
-
-        self.next_slide()
-
         self.play(FadeIn(bullet33, shift=UP))
-
-        self.next_slide()
-
         self.play(FadeIn(bullet34, shift=UP))
         self.wait(0.2)
         self.play(Circumscribe(spotify, color=WHITE))
@@ -107,7 +92,19 @@ class Presentation(Slide):
 
         # ---------------- Slide 4 ----------------
         title4 = Text("How?").scale(2)
-        lastfm = SVGMobject('lastfm-icon.svg').scale(0.8)
+
+        diagram_shift = RIGHT
+
+        convergence_point41 = LEFT * 3.5 + diagram_shift
+        lastfm = SVGMobject('lastfm-icon.svg').scale(0.4)
+        data = SVGMobject('data-icon.svg').scale(0.4)
+        data[0].set_color(WHITE)
+        data.next_to(convergence_point41, buff=-0.025)
+        
+        convergence_point42 = RIGHT * 0.5 + diagram_shift
+        arrow42 = Arrow(start=data.get_right(), end=convergence_point42, buff=0.1, tip_length=0.15)
+        r = SVGMobject('r-icon.svg').scale(0.4)
+        r.next_to(arrow42, buff=0.1)
 
         self.next_slide()
 
@@ -115,16 +112,64 @@ class Presentation(Slide):
         self.wait()
         self.play(title4.animate.scale(0.75).to_corner(UL))
         self.wait(0.6)
+        
         self.play(
             logos.animate
-            .arrange(DOWN, buff=0.8)
+            .arrange(DOWN, buff=1)
             .scale(1.25)
             .next_to(title4, direction=DOWN, buff=1.1)
             .align_to(title4, LEFT)
+            .shift(diagram_shift)
         )
         self.wait(0.6)
+
         lastfm.move_to(apple_music).match_height(apple_music)
+        arrow_top41 = Arrow(start=spotify.get_right(), end=convergence_point41, buff=0.1, tip_length=0.15)
+        arrow_bottom41 = Arrow(start=apple_music.get_right(), end=convergence_point41, buff=0.1, tip_length=0.15)
+        apple_music_backup = apple_music.copy()
+
         self.play(ReplacementTransform(apple_music, lastfm))
-        self.wait(2)
-        self.play(ReplacementTransform(lastfm, apple_music))
+        self.wait(2.5)
+        self.play(ReplacementTransform(lastfm, apple_music_backup))
+        self.wait()
+        apple_music = apple_music_backup
         
+        self.play(
+            Create(arrow_top41), 
+            Create(arrow_bottom41)
+        )
+        self.play(Write(data))
+        self.play(Create(arrow42))
+        self.play(Write(r))
+
+        angles43 = [40, 15, -15, -40]
+        horizontal_distance = 2
+        arrows43 = VGroup(*[
+            Arrow(
+                start=r.get_right(), 
+                end=r.get_right() + RIGHT * horizontal_distance + UP * (horizontal_distance * np.tan(angle * DEGREES)),
+                buff=0.1, 
+                tip_length=0.15
+            )
+            for angle in angles43
+        ])
+        self.play(Create(arrows43))
+
+        labels = ["RQ1", "RQ2", "RQ3", "RQ4"]
+        text_group = VGroup()
+        for i, arrow in enumerate(arrows43):
+            label = Text(labels[i], font_size=24)
+            label.next_to(arrow.get_end(), RIGHT, buff=0.1) 
+            text_group.add(label)
+        self.play(Write(text_group))
+        # ---------------- Slide 4 ----------------
+
+        # ---------------- Slide 5 ----------------
+
+        # ---------------- Slide 5 ----------------
+        
+
+
+class Test(Scene):
+    def construct(self):
+        pass
