@@ -673,7 +673,7 @@ class Presentation(Slide):
         ax_era = Axes(
             x_range=[0, n_periods + 0.5, 1],
             y_range=[0, y_max_era, 20],
-            x_length=11.25,
+            x_length=12.0,
             y_length=3.5,
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
@@ -682,7 +682,7 @@ class Presentation(Slide):
         )
         y_label_era = Tex("Hours", font_size=20).rotate(90 * DEGREES).next_to(ax_era, LEFT, buff=0.9)
         plot_group_era = VGroup(ax_era, y_label_era)
-        plot_group_era.next_to(title7, DOWN, buff=0.35).set_x(0.3)
+        plot_group_era.next_to(title7, DOWN, buff=0.35).set_x(0)
 
         axis_x_era = ax_era.c2p(0, 0)[0]
         yticks_era = VGroup()
@@ -738,14 +738,14 @@ class Presentation(Slide):
         legend_items_era = []
         for artist in all_artists:
             box  = Square(side_length=0.16, fill_color=artist_color[artist], fill_opacity=1, stroke_width=0)
-            lbl  = Tex(artist, font_size=9)
+            lbl  = Tex(artist, font_size=10)
             item = VGroup(box, lbl).arrange(RIGHT, buff=0.08)
             legend_items_era.append(item)
 
         rows_era = []
         for i in range(0, len(legend_items_era), N_COLS_ERA):
             chunk = legend_items_era[i:i + N_COLS_ERA]
-            row   = VGroup(*chunk).arrange(RIGHT, buff=0.15)
+            row   = VGroup(*chunk).arrange(RIGHT, buff=0.20)
             rows_era.append(row)
         legend_era = VGroup(*rows_era).arrange(DOWN, buff=0.12)
         legend_era.next_to(ax_era, DOWN, buff=1.1)
@@ -808,7 +808,7 @@ class Presentation(Slide):
         ax_genre = Axes(
             x_range=[0, n_periods_g + 0.5, 1],
             y_range=[0, 1.0, 0.25],
-            x_length=11.25,
+            x_length=12.0,
             y_length=3.5,
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
@@ -817,7 +817,7 @@ class Presentation(Slide):
         )
         y_label_genre = Tex("Share of listening", font_size=18).rotate(90 * DEGREES).next_to(ax_genre, LEFT, buff=0.9)
         plot_group_genre = VGroup(ax_genre, y_label_genre)
-        plot_group_genre.next_to(title7, DOWN, buff=0.35).set_x(0.3)
+        plot_group_genre.next_to(title7, DOWN, buff=0.35).set_x(0)
 
         # Y-axis ticks — shifted further left so they don't crowd the y-label
         axis_x_g = ax_genre.c2p(0, 0)[0]
@@ -880,8 +880,8 @@ class Presentation(Slide):
             chunk = legend_items_genre[i:i + N_COLS_GENRE]
             row   = VGroup(*chunk).arrange(RIGHT, buff=0.35)
             rows_genre.append(row)
-        legend_genre = VGroup(*rows_genre).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
-        legend_genre.next_to(ax_genre, DOWN, buff=1.1).set_x(0)
+        legend_genre = VGroup(*rows_genre).arrange(DOWN, buff=0.15)
+        legend_genre.next_to(ax_genre, DOWN, buff=1.1)
 
         self.play(
             Create(ax_genre), Create(grid_genre), Write(y_label_genre),
@@ -1066,8 +1066,3 @@ class Presentation(Slide):
         self.wait(0.5)
         self.play(banner.expand())
         # ---------------- Slide 10 ----------------
-
-
-class Test(Slide):
-    def construct(self):
-        pass
