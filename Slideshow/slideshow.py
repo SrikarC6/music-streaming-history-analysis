@@ -1048,6 +1048,8 @@ class Presentation(Slide):
         self.play(FadeIn(bullet93, shift=UP))
         self.play(FadeIn(bullet94, shift=UP))
         self.play(FadeIn(bullet95, shift=UP))
+        
+        self.next_slide()
         # ---------------- Slide 9 ----------------
 
 
