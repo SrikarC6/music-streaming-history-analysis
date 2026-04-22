@@ -64,8 +64,6 @@ class Presentation(Slide):
 
         self.wipe([title1, caption1, author], [title2])
 
-        self.next_slide()
-
         self.play(FadeIn(bullet21, shift=UP))
         self.play(FadeIn(bullet22, shift=UP))
         self.play(FadeIn(bullet23, shift=UP))
@@ -138,7 +136,7 @@ class Presentation(Slide):
 
         apple_music_backup = apple_music.copy()
         self.play(ReplacementTransform(apple_music, lastfm))
-        self.wait(2.5)
+        self.wait(2)
         self.play(ReplacementTransform(lastfm, apple_music_backup))
         self.wait()
         apple_music = apple_music_backup
