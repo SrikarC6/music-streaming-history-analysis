@@ -109,7 +109,8 @@ listening-history-clean.csv
 **/media/**/*.json
 **/slides/*.json
 *.svg
-presentation-stt-180_assets
+!**/presentation-stt-180.html
+presentation-stt-180_assets/
 
 # API keys / secrets (never commit these)
 secrets.py
