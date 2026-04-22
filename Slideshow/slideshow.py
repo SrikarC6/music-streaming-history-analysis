@@ -44,7 +44,7 @@ class Presentation(Slide):
 
 
         # ---------------- Slide 2 ----------------
-        title2 = Tex('Introduction').to_corner(UL)
+        title2 = Tex('Introduction').scale(1.5).to_corner(UL)
 
         bullet21 = Tex('• Moving away from streaming', font_size=35)
         bullet22 = Tex('• Realized I don\'t know a lot about my music tastes', font_size=35)
@@ -71,7 +71,6 @@ class Presentation(Slide):
         self.play(FadeIn(bullet23, shift=UP))
         self.wait(0.5)
         self.play(Write(spotify))
-        self.wait(0.7)
         self.play(Write(apple_music))
 
         self.next_slide()
@@ -81,7 +80,7 @@ class Presentation(Slide):
 
 
         # ---------------- Slide 3 ----------------
-        title3 = Tex('Questions to Answer').to_corner(UL)
+        title3 = Tex('Questions to Answer').scale(1.5).to_corner(UL)
         self.wipe([title2, bullets2], title3)
 
         bullet311 = Tex('1. How has my total listening volume trended over time, and when during the', font_size=28)
@@ -98,15 +97,13 @@ class Presentation(Slide):
         bullets3 = VGroup(bullet31, bullet32, bullet33, bullet34).arrange(DOWN, aligned_edge=LEFT, buff=0.5)
         bullets3.next_to(title3, direction=DOWN, buff=0.5).align_to(title3, LEFT)
 
-        self.next_slide()
-
         self.play(FadeIn(bullet31, shift=UP))
         self.play(FadeIn(bullet32, shift=UP))
         self.play(FadeIn(bullet33, shift=UP))
         self.play(FadeIn(bullet34, shift=UP))
-        self.wait(0.2)
-        self.play(Circumscribe(spotify, color=WHITE))
         self.wait(0.3)
+        self.play(Circumscribe(spotify, color=WHITE))
+        self.wait(0.2)
         self.play(Circumscribe(apple_music, color=WHITE))
         # ---------------- Slide 3 ----------------
 
@@ -141,7 +138,7 @@ class Presentation(Slide):
 
         apple_music_backup = apple_music.copy()
         self.play(ReplacementTransform(apple_music, lastfm))
-        self.wait(4)
+        self.wait(2.5)
         self.play(ReplacementTransform(lastfm, apple_music_backup))
         self.wait()
         apple_music = apple_music_backup
@@ -187,10 +184,8 @@ class Presentation(Slide):
 
         # ---------------- Slide 5.1 ----------------
         title5 = Tex("RQ1: Temporal Patterns").to_corner(UL)
-        self.play(FadeOut(Group(*self.mobjects)))
-        self.play(FadeIn(title5))
+        self.wipe([*self.mobjects], title5)
 
-        # --- Data ---
         GLOBAL_DF['hours'] = GLOBAL_DF['minutes_played'] / 60
         GLOBAL_DF['source_label'] = GLOBAL_DF['source'].replace({"spotify": "Spotify", "apple_music": "Apple Music"})
 
@@ -202,7 +197,6 @@ class Presentation(Slide):
         y_max = int(np.ceil(max(total_vals) / 20.0)) * 20
         x_max = len(monthly)
 
-        # --- Legend ---
         apple_box  = Square(side_length=0.2, fill_color="#FC3C44", fill_opacity=1, stroke_width=0)
         apple_text = Tex("Apple Music", font_size=20)
         apple_leg  = VGroup(apple_box, apple_text).arrange(RIGHT, buff=0.15)
@@ -214,7 +208,6 @@ class Presentation(Slide):
         legend = VGroup(apple_leg, spot_leg).arrange(RIGHT, buff=0.8)
         legend.next_to(title5, DOWN, buff=0.15).set_x(0)
 
-        # --- Axes ---
         axes = Axes(
             x_range=[0, x_max + 1, 1],
             y_range=[0, y_max, 20],
@@ -231,7 +224,6 @@ class Presentation(Slide):
         plot_base = VGroup(axes, y_label)
         plot_base.next_to(legend, DOWN, buff=0.25).set_x(0)
 
-        # --- Grid lines ---
         grid_lines = VGroup()
         for y in range(20, y_max + 1, 20):
             line = Line(
@@ -240,7 +232,6 @@ class Presentation(Slide):
             )
             grid_lines.add(line)
 
-        # --- Bars ---
         bar_width = (axes.x_length / (x_max + 1)) * 0.85
         bars = VGroup()
         for i, month in enumerate(monthly.index):
@@ -266,7 +257,6 @@ class Presentation(Slide):
                 a_rect.move_to(axes.c2p(x_coord, s_val + (a_val / 2)))
                 bars.add(a_rect)
 
-        # --- X-axis ticks and labels ---
         x_ticks  = VGroup()
         x_labels = VGroup()
         for i, month in enumerate(monthly.index):
@@ -287,7 +277,6 @@ class Presentation(Slide):
                 lbl.shift(LEFT * 0.28)
                 x_labels.add(lbl)
 
-        # --- Trend line ---
         smoothed  = gaussian_filter1d(total_vals, sigma=2)
         trend_pts = [axes.c2p(i + 1, smoothed[i]) for i in range(len(smoothed))]
         trend_line = VMobject(color=PURPLE).set_stroke(width=4).set_points_smoothly(trend_pts)
@@ -302,7 +291,7 @@ class Presentation(Slide):
         )
         self.wait(0.5)
         self.play(
-            AnimationGroup(*[GrowFromEdge(bar, DOWN) for bar in bars], lag_ratio=0.02), 
+            AnimationGroup(*[GrowFromEdge(bar, DOWN) for bar in bars], lag_ratio=0.02),
             run_time=3
         )
         self.play(Create(trend_line), run_time=2)
@@ -314,7 +303,6 @@ class Presentation(Slide):
         # ---------------- Slide 5.2 ----------------
         self.play(*[FadeOut(mob) for mob in self.mobjects if mob is not title5])
 
-        # --- Data ---
         day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
         heatmap_raw  = GLOBAL_DF.groupby(['day_of_week', 'hour']).size().reset_index(name='n')
@@ -330,7 +318,6 @@ class Presentation(Slide):
         cell_w = grid_w / 24
         cell_h = grid_h / 7
 
-        # --- Cells ---
         cells = VGroup()
         for ri, day in enumerate(day_order):
             for ci in range(24):
@@ -348,7 +335,6 @@ class Presentation(Slide):
                 ])
                 cells.add(cell)
 
-        # --- Y-axis labels ---
         y_labels = VGroup()
         for ri, day in enumerate(day_order):
             lbl = Tex(day, font_size=15)
@@ -359,7 +345,6 @@ class Presentation(Slide):
             ])
             y_labels.add(lbl)
 
-        # --- X-axis labels ---
         x_labels = VGroup()
         for hour, label_str in {0: "12 am", 6: "6 am", 12: "12 pm", 18: "6 pm", 23: "11 pm"}.items():
             lbl = Tex(label_str, font_size=15)
@@ -372,7 +357,6 @@ class Presentation(Slide):
 
         x_axis_title = Tex("Hour of day", font_size=18).move_to([0, -grid_h/2 - 0.68, 0])
 
-        # --- Colorbar ---
         bar_x = grid_w/2 + 1.15
         bar_w = 0.28
         n_seg = 60
@@ -409,7 +393,6 @@ class Presentation(Slide):
             cb_ticks.add(tick, lbl)
             v += 50
 
-        # --- Assemble and position ---
         chart = VGroup(cells, y_labels, x_labels, x_axis_title, colorbar, cb_outline, plays_title, cb_ticks)
         chart.next_to(title5, DOWN, buff=0.45)
         chart.set_x(0.55)
@@ -421,7 +404,6 @@ class Presentation(Slide):
             Write(plays_title), Write(cb_ticks)
         )
 
-        # --- Observations ---
         bullet50 = Tex("Observations", font_size=30)
         bullet50.next_to(x_axis_title, direction=DOWN, buff=0.15)
         bullet50.align_to(title5, LEFT)
@@ -447,7 +429,6 @@ class Presentation(Slide):
         title6 = Tex("RQ2: Engagement").to_corner(UL)
         self.wipe(Group(*self.mobjects), title6)
 
-        # --- Data ---
         artist_hours = GLOBAL_DF.groupby('artist_name')['minutes_played'].sum() / 60
         top_artists  = artist_hours.nlargest(15).sort_values(ascending=True)
 
@@ -460,7 +441,7 @@ class Presentation(Slide):
         max_plays   = top_tracks['plays'].max()
         x_max_right = int(np.ceil(max_plays / 50) * 50)
 
-        # --- Axes ---
+        # FIX 1: Moved axes centers up from y=-0.8 to y=-0.5 to keep x-labels on screen
         ax_left = Axes(
             x_range=[0, x_max_left + (x_max_left * 0.18), 30],
             y_range=[0.5, 15.5, 1],
@@ -469,7 +450,7 @@ class Presentation(Slide):
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
             y_axis_config={"include_ticks": False, "include_numbers": False}
-        ).move_to([-2.6, -0.8, 0])
+        ).move_to([-2.6, -0.5, 0])
 
         ax_right = Axes(
             x_range=[0, x_max_right + (x_max_right * 0.18), 50],
@@ -479,22 +460,19 @@ class Presentation(Slide):
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
             y_axis_config={"include_ticks": False, "include_numbers": False}
-        ).move_to([4.2, -0.8, 0])
+        ).move_to([4.2, -0.5, 0])
 
-        # --- Titles and axis labels ---
         title_left   = Tex("Top 15 Artists", font_size=24).next_to(ax_left, UP, buff=0.4)
         title_right  = Tex("Top 15 Tracks", font_size=24).next_to(ax_right, UP, buff=0.4)
-        x_label_left  = Tex("Hours", font_size=20).next_to(ax_left, DOWN, buff=0.5)
-        x_label_right = Tex("Plays", font_size=20).next_to(ax_right, DOWN, buff=0.5)
+        x_label_left  = Tex("Hours", font_size=20).next_to(ax_left, DOWN, buff=0.2)
+        x_label_right = Tex("Plays", font_size=20).next_to(ax_right, DOWN, buff=0.2)
 
-        # --- Vertical grid lines ---
         grid_lines = VGroup()
         for x in range(30, int(x_max_left) + 1, 30):
             grid_lines.add(Line(ax_left.c2p(x, 0.5), ax_left.c2p(x, 15.5), color=GRAY, stroke_opacity=0.3, stroke_width=1))
         for x in range(50, int(x_max_right) + 1, 50):
             grid_lines.add(Line(ax_right.c2p(x, 0.5), ax_right.c2p(x, 15.5), color=GRAY, stroke_opacity=0.3, stroke_width=1))
 
-        # --- Left bars (artists) ---
         bar_height  = 0.28
         bars_left   = VGroup()
         labels_left = VGroup()
@@ -512,7 +490,6 @@ class Presentation(Slide):
             val = Tex(str(round(hours, 1)), font_size=14).next_to(bar, RIGHT, buff=0.1)
             vals_left.add(val)
 
-        # --- Right bars (tracks) ---
         bars_right   = VGroup()
         labels_right = VGroup()
         vals_right   = VGroup()
@@ -530,7 +507,6 @@ class Presentation(Slide):
             val = Tex(str(row.plays), font_size=14).next_to(bar, RIGHT, buff=0.1)
             vals_right.add(val)
 
-        # --- Animate ---
         self.play(
             Create(ax_left), Create(ax_right),
             Create(grid_lines),
@@ -552,8 +528,7 @@ class Presentation(Slide):
         # ---------------- Slide 6.2 ----------------
         self.play(*[FadeOut(mob) for mob in self.mobjects if mob is not title6])
         self.add(title6)
-        
-        # --- Data ---
+
         skip_by_artist = (
             GLOBAL_DF.groupby('artist_name')
             .agg(
@@ -567,7 +542,7 @@ class Presentation(Slide):
         top_skipped      = skip_by_artist.nlargest(12, 'skip_rate').sort_values('skip_rate', ascending=True)
         top_hours_labels = skip_by_artist.nlargest(10, 'hours')
 
-        # --- Left chart: Most-Skipped Artists ---
+        # FIX 2: Added "include_ticks": False to eliminate the double-tick artifact
         ax_left = Axes(
             x_range=[0, 1.18, 0.25],
             y_range=[0.5, 12.5, 1],
@@ -575,24 +550,43 @@ class Presentation(Slide):
             y_length=5.0,
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
-            x_axis_config={"include_numbers": False},
+            x_axis_config={"include_numbers": False, "include_ticks": False},
             y_axis_config={"include_ticks": False, "include_numbers": False}
         ).move_to([-3.2, -0.6, 0])
 
         title_left  = Tex("Most-Skipped Artists", font_size=22).next_to(ax_left, UP, buff=0.3)
 
-        # X-axis ticks — positioned just below axis line, label further below
-        axis_y = ax_left.c2p(0, 0)[1]
+        sqrt_breaks = [0, 0.10, 0.25, 0.50, 0.75, 1.0]
+        y_max_sqrt  = np.sqrt(1.08)
+        x_max_hrs   = float(np.ceil(skip_by_artist['hours'].max() / 50) * 50 * 1.12)
+
+        # FIX 2: Also remove auto-ticks on right chart for consistency
+        ax_right = Axes(
+            x_range=[0, x_max_hrs, 50],
+            y_range=[0, y_max_sqrt, 0.2],
+            x_length=5.0,
+            y_length=5.0,
+            tips=False,
+            axis_config={"color": WHITE, "stroke_width": 2},
+            x_axis_config={"include_numbers": False, "include_ticks": False},
+            y_axis_config={"include_ticks": False, "include_numbers": False}
+        ).move_to([2.6, -0.6, 0])
+
+        # FIX 2: Use ax_right's axis_y as the shared baseline so both sets of
+        # x-ticks/labels sit at the same visual height across the slide
+        axis_y_right = ax_right.c2p(0, 0)[1]
+
+        # Left chart ticks and labels — anchored to same y as right
         xticks_left = VGroup()
         for pct in [0, 0.25, 0.50, 0.75, 1.0]:
             tick_x = ax_left.c2p(pct, 0)[0]
-            tick   = Line([tick_x, axis_y, 0], [tick_x, axis_y - 0.1, 0], color=WHITE, stroke_width=1.5)
+            tick   = Line([tick_x, axis_y_right, 0], [tick_x, axis_y_right - 0.1, 0], color=WHITE, stroke_width=1.5)
             lbl    = Tex(f"{int(pct * 100)}\\%", font_size=13)
-            lbl.move_to([tick_x, axis_y - 0.32, 0])
+            lbl.move_to([tick_x, axis_y_right - 0.32, 0])
             xticks_left.add(tick, lbl)
 
         xlabel_left = Tex("Skip rate", font_size=18)
-        xlabel_left.move_to([ax_left.get_center()[0], axis_y - 0.65, 0])
+        xlabel_left.move_to([ax_left.get_center()[0], axis_y_right - 0.65, 0])
 
         grid_left = VGroup(*[
             Line(ax_left.c2p(pct, 0.5), ax_left.c2p(pct, 12.5),
@@ -617,27 +611,9 @@ class Presentation(Slide):
             val = Tex(f"{round(row['skip_rate'] * 100)}\\%", font_size=13).next_to(bar, RIGHT, buff=0.08)
             vals_left.add(val)
 
-        # --- Right chart: Hours vs Skip Rate (sqrt y-axis) ---
-        sqrt_breaks = [0, 0.10, 0.25, 0.50, 0.75, 1.0]
-        y_max_sqrt  = np.sqrt(1.08)
-        x_max_hrs   = float(np.ceil(skip_by_artist['hours'].max() / 50) * 50 * 1.12)
-
-        ax_right = Axes(
-            x_range=[0, x_max_hrs, 50],
-            y_range=[0, y_max_sqrt, 0.2],
-            x_length=5.0,
-            y_length=5.0,
-            tips=False,
-            axis_config={"color": WHITE, "stroke_width": 2},
-            x_axis_config={"include_numbers": False},
-            y_axis_config={"include_ticks": False, "include_numbers": False}
-        ).move_to([2.6, -0.6, 0])
-
         title_right  = Tex("Hours vs Skip Rate", font_size=22).next_to(ax_right, UP, buff=0.3)
         ylabel_right = Tex("Skip rate", font_size=18).rotate(90 * DEGREES).next_to(ax_right, LEFT, buff=0.55)
 
-        # X-axis ticks aligned to same y level as left chart ticks
-        axis_y_right = ax_right.c2p(0, 0)[1]
         xticks_right = VGroup()
         for hrs in np.arange(0, x_max_hrs, 50):
             tick_x = ax_right.c2p(hrs, 0)[0]
@@ -649,7 +625,6 @@ class Presentation(Slide):
         xlabel_right = Tex("Hours played", font_size=18)
         xlabel_right.move_to([ax_right.get_center()[0], axis_y_right - 0.65, 0])
 
-        # Y-axis ticks at sqrt-transformed positions
         yticks_right = VGroup()
         for br in sqrt_breaks:
             tick_y = ax_right.c2p(0, np.sqrt(br))[1]
@@ -665,7 +640,6 @@ class Presentation(Slide):
             for br in sqrt_breaks if br > 0
         ])
 
-        # Scatter dots sized by plays
         plays_min = skip_by_artist['plays'].min()
         plays_max = skip_by_artist['plays'].max()
         dot_r_min = 0.04
@@ -679,7 +653,6 @@ class Presentation(Slide):
             dot.move_to(ax_right.c2p(row['hours'], np.sqrt(row['skip_rate'])))
             dots.add(dot)
 
-        # Leader lines + labels for top 10 artists by hours
         top_hours_sorted = top_hours_labels.sort_values('skip_rate', ascending=False)
         label_x_screen   = ax_right.get_right()[0] + 0.2
         chart_y_top      = ax_right.c2p(0, y_max_sqrt)[1]
@@ -694,7 +667,6 @@ class Presentation(Slide):
             lbl       = Tex(row['artist_name'], font_size=11).next_to(label_pos, RIGHT, buff=0.05)
             leader_group.add(line, lbl)
 
-        # --- Animate ---
         self.play(
             Create(ax_left), Create(ax_right),
             Create(grid_left), Create(grid_right),
@@ -721,7 +693,6 @@ class Presentation(Slide):
         title7 = Tex("RQ3: Artist \\& Genre Shifts").to_corner(UL)
         self.wipe([Group(*self.mobjects)], [title7])
 
-        # --- Data ---
         rq3_df = GLOBAL_DF.copy()
         rq3_df['date_parsed'] = pd.to_datetime(rq3_df['date'])
         rq3_df['half_year']   = rq3_df['date_parsed'].apply(
@@ -757,31 +728,30 @@ class Presentation(Slide):
 
         y_max_era = int(np.ceil(era_data.groupby('half_year')['hours'].sum().max() / 20) * 20)
 
-        # --- Axes ---
+        # FIX 3 & 5: x_length 9.0 (was 7.5), x_range extended +0.5 for breathing room on right
         ax_era = Axes(
-            x_range=[0, n_periods, 1],
+            x_range=[0, n_periods + 0.5, 1],
             y_range=[0, y_max_era, 20],
-            x_length=7.5,
+            x_length=9.0,
             y_length=4.5,
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
             x_axis_config={"include_ticks": False},
             y_axis_config={"numbers_to_include": np.arange(0, y_max_era + 1, 20)}
         )
-        y_label_era = Tex("Hours", font_size=20).rotate(90 * DEGREES).next_to(ax_era, LEFT, buff=0.35)
+        y_label_era = Tex("Hours", font_size=20).rotate(90 * DEGREES).next_to(ax_era, LEFT, buff=0.1)
 
         plot_group_era = VGroup(ax_era, y_label_era)
-        plot_group_era.next_to(title7, DOWN, buff=0.35).set_x(-2.2)
+        plot_group_era.next_to(title7, DOWN, buff=0.35).set_x(-2.0)
 
-        # --- Horizontal grid lines ---
+        # Grid lines extend to full axis width
         grid_era = VGroup(*[
-            Line(ax_era.c2p(0, y), ax_era.c2p(n_periods, y),
+            Line(ax_era.c2p(0, y), ax_era.c2p(n_periods + 0.5, y),
                  color=GRAY, stroke_width=1, stroke_opacity=0.3)
             for y in range(20, y_max_era + 1, 20)
         ])
 
-        # --- Stacked bars ---
-        bar_width = (ax_era.x_length / n_periods) * 0.75
+        bar_width = (ax_era.x_length / (n_periods + 0.5)) * 0.75
         bars_era  = VGroup()
 
         for pi, hy in enumerate(half_years):
@@ -801,7 +771,6 @@ class Presentation(Slide):
                 bars_era.add(bar)
                 cumulative += h
 
-        # --- X-axis tick labels ---
         x_ticks_era  = VGroup()
         x_labels_era = VGroup()
         for pi, hy in enumerate(half_years):
@@ -816,21 +785,20 @@ class Presentation(Slide):
             lbl.shift(LEFT * 0.22)
             x_labels_era.add(lbl)
 
-        # --- Legend (2 columns) ---
+        # FIX 3: Larger legend — font 12 (was 9), box 0.17 (was 0.14), more spacing
         col_size = (len(all_artists) + 1) // 2
         legend_items = []
         for artist in all_artists:
-            box  = Square(side_length=0.14, fill_color=artist_color[artist], fill_opacity=1, stroke_width=0)
-            lbl  = Tex(artist, font_size=9)
-            item = VGroup(box, lbl).arrange(RIGHT, buff=0.08)
+            box  = Square(side_length=0.17, fill_color=artist_color[artist], fill_opacity=1, stroke_width=0)
+            lbl  = Tex(artist, font_size=12)
+            item = VGroup(box, lbl).arrange(RIGHT, buff=0.10)
             legend_items.append(item)
 
-        col1 = VGroup(*legend_items[:col_size]).arrange(DOWN, aligned_edge=LEFT, buff=0.09)
-        col2 = VGroup(*legend_items[col_size:]).arrange(DOWN, aligned_edge=LEFT, buff=0.09)
-        legend_era = VGroup(col1, col2).arrange(RIGHT, aligned_edge=UP, buff=0.22)
-        legend_era.next_to(ax_era, RIGHT, buff=0.3).align_to(ax_era, UP)
+        col1 = VGroup(*legend_items[:col_size]).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        col2 = VGroup(*legend_items[col_size:]).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        legend_era = VGroup(col1, col2).arrange(RIGHT, aligned_edge=UP, buff=0.30)
+        legend_era.next_to(ax_era, RIGHT, buff=0.35).align_to(ax_era, UP)
 
-        # --- Animate ---
         self.play(
             Create(ax_era),
             Create(grid_era),
@@ -852,7 +820,6 @@ class Presentation(Slide):
         # ---------------- Slide 7.2 ----------------
         self.play(*[FadeOut(mob) for mob in self.mobjects if mob is not title7])
 
-        # --- Data ---
         genre_df = rq3_df[rq3_df['genre'].notna() & (rq3_df['genre'] != 'Other')].copy()
 
         genre_era_raw = (
@@ -895,11 +862,11 @@ class Presentation(Slide):
             "World & Regional":     "#FF006E",
         }
 
-        # --- Axes ---
+        # FIX 4 & 5: x_length 9.0 (was 7.5), x_range extended +0.5 for breathing room on right
         ax_genre = Axes(
-            x_range=[0, n_periods_g, 1],
+            x_range=[0, n_periods_g + 0.5, 1],
             y_range=[0, 1.0, 0.25],
-            x_length=7.5,
+            x_length=9.0,
             y_length=4.5,
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
@@ -909,9 +876,8 @@ class Presentation(Slide):
         y_label_genre = Tex("Share of listening", font_size=18).rotate(90 * DEGREES).next_to(ax_genre, LEFT, buff=0.4)
 
         plot_group_genre = VGroup(ax_genre, y_label_genre)
-        plot_group_genre.next_to(title7, DOWN, buff=0.35).set_x(-2.2)
+        plot_group_genre.next_to(title7, DOWN, buff=0.35).set_x(-2.0)
 
-        # --- Y-axis tick labels ---
         axis_x_g = ax_genre.c2p(0, 0)[0]
         yticks_g = VGroup()
         for pct_val in [0, 0.25, 0.50, 0.75, 1.0]:
@@ -921,7 +887,6 @@ class Presentation(Slide):
             lbl.move_to([axis_x_g - 0.42, tick_y, 0])
             yticks_g.add(tick, lbl)
 
-        # --- X-axis tick labels ---
         x_ticks_g  = VGroup()
         x_labels_g = VGroup()
         for pi, hy in enumerate(half_years_g):
@@ -936,14 +901,13 @@ class Presentation(Slide):
             lbl.shift(LEFT * 0.22)
             x_labels_g.add(lbl)
 
-        # --- Horizontal grid lines ---
+        # Grid lines extend to full axis width
         grid_genre = VGroup(*[
-            Line(ax_genre.c2p(0, y), ax_genre.c2p(n_periods_g, y),
+            Line(ax_genre.c2p(0, y), ax_genre.c2p(n_periods_g + 0.5, y),
                  color=GRAY, stroke_width=1, stroke_opacity=0.3)
             for y in [0.25, 0.50, 0.75, 1.0]
         ])
 
-        # --- Stacked area polygons (cumulative pct stacked bottom-up) ---
         area_polys = VGroup()
         cumsum_g   = np.zeros(n_periods_g)
         x_coords_g = [pi + 0.5 for pi in range(n_periods_g)]
@@ -963,17 +927,16 @@ class Presentation(Slide):
             area_polys.add(poly)
             cumsum_g = upper_g
 
-        # --- Genre legend ---
+        # FIX 4: Larger legend — font 15 (was 12), box 0.22 (was 0.18), more spacing
         legend_genre = VGroup()
         for genre in genres_list:
-            box  = Square(side_length=0.18, fill_color=GENRE_COLORS.get(genre, "#888888"), fill_opacity=1, stroke_width=0)
-            lbl  = Tex(genre.replace("&", r"\&"), font_size=12)
-            item = VGroup(box, lbl).arrange(RIGHT, buff=0.12)
+            box  = Square(side_length=0.22, fill_color=GENRE_COLORS.get(genre, "#888888"), fill_opacity=1, stroke_width=0)
+            lbl  = Tex(genre.replace("&", r"\&"), font_size=15)
+            item = VGroup(box, lbl).arrange(RIGHT, buff=0.14)
             legend_genre.add(item)
-        legend_genre.arrange(DOWN, aligned_edge=LEFT, buff=0.15)
-        legend_genre.next_to(ax_genre, RIGHT, buff=0.3).align_to(ax_genre, UP)
+        legend_genre.arrange(DOWN, aligned_edge=LEFT, buff=0.20)
+        legend_genre.next_to(ax_genre, RIGHT, buff=0.35).align_to(ax_genre, UP)
 
-        # --- Animate ---
         self.play(
             Create(ax_genre),
             Create(grid_genre),
@@ -997,14 +960,13 @@ class Presentation(Slide):
         title8 = Tex("RQ4: Platform Differences").to_corner(UL)
         self.wipe([Group(*self.mobjects)], [title8])
 
-        # --- Data prep ---
         if 'source_label' not in GLOBAL_DF.columns:
             GLOBAL_DF['source_label'] = GLOBAL_DF['source'].replace({"spotify": "Spotify", "apple_music": "Apple Music"})
-        
+
         GLOBAL_DF['skipped_num'] = GLOBAL_DF['skipped'].astype(float)
 
         grouped = GLOBAL_DF.groupby('source_label')
-        
+
         plays = grouped.size()
         hours = (grouped['minutes_played'].sum() / 60)
         avg_min = grouped['minutes_played'].mean()
@@ -1032,38 +994,33 @@ class Presentation(Slide):
         headers = [r"\textbf{Source}", r"\textbf{Plays}", r"\textbf{Hours}", r"\textbf{Avg Min / Play}", r"\textbf{Skip Rate}"]
         table_data = [headers, am_row, sp_row]
 
-        # --- Build Table ---
         mob_table_data = [[Tex(item, font_size=32) for item in row] for row in table_data]
-        
+
         table = MobjectTable(
             mob_table_data,
             include_outer_lines=False,
             line_config={"stroke_width": 1, "color": GRAY}
         )
-        
-        # --- Booktab Styling ---
+
         table.get_vertical_lines().set_opacity(0)
-        
+
         h_lines = table.get_horizontal_lines()
         for i, line in enumerate(h_lines):
-            if i == 1: 
+            if i == 1:
                 line.set_color(WHITE).set_stroke(width=2).set_opacity(1)
             else:
                 line.set_opacity(0)
 
         caption = Tex("Listening behavior comparison: Spotify vs Apple Music.", font_size=36)
-        
-        table_group = VGroup(caption, table).arrange(DOWN, buff=0.8)
-        table_group.next_to(title7, DOWN, buff=1.2).set_x(0)
 
-        # --- Animate ---
+        table_group = VGroup(caption, table).arrange(DOWN, buff=0.8)
+        table_group.next_to(title8, DOWN, buff=1.2).set_x(0)
+
         self.play(Write(caption))
         self.wait(0.2)
-        
-        # Draw the dividing line first for a cool structural effect
+
         self.play(Create(h_lines[1]), run_time=1)
-        
-        # Cascade the rows in one by one!
+
         self.play(
             AnimationGroup(
                 *[Write(row) for row in table.get_rows()],
@@ -1078,7 +1035,6 @@ class Presentation(Slide):
         # ---------------- Slide 8.2 ----------------
         self.play(*[FadeOut(mob) for mob in self.mobjects if mob is not title8])
 
-        # --- 1. DATA PREP (Mimicking case_when) ---
         def clean_platform(p):
             p = str(p).lower()
             if "android" in p: return "Android"
@@ -1092,45 +1048,39 @@ class Presentation(Slide):
         if 'platform_clean' not in GLOBAL_DF.columns:
             GLOBAL_DF['platform_clean'] = GLOBAL_DF['platform'].apply(clean_platform)
 
-        # Calculate hours and sort ascending so the highest value is drawn at the top (y=7)
         platform_summary = GLOBAL_DF.groupby('platform_clean')['minutes_played'].sum() / 60
         platform_summary = platform_summary.sort_values(ascending=True)
 
         max_hours = platform_summary.max()
-        # Round up to the nearest 100 for clean axis limits
         x_max = int(np.ceil(max_hours / 100.0)) * 100
         n_platforms = len(platform_summary)
 
-        # --- 2. AXES SETUP ---
+        # FIX 6: x_length 11 (was 9) for a wider chart
         axes = Axes(
-            x_range=[0, x_max + (x_max * 0.15), 100], # Added 15% expansion buffer
+            x_range=[0, x_max + (x_max * 0.15), 100],
             y_range=[0.5, n_platforms + 0.5, 1],
-            x_length=9,
+            x_length=11,
             y_length=4.5,
             tips=False,
             axis_config={"color": WHITE, "stroke_width": 2},
             y_axis_config={"include_ticks": False, "include_numbers": False}
-        ).next_to(title7, DOWN, buff=0.8).set_x(0)
+        ).next_to(title8, DOWN, buff=0.8).set_x(0)
 
-        x_label = Tex("Hours", font_size=24).next_to(axes, DOWN, buff=0.5)
+        x_label = Tex("Hours", font_size=24).next_to(axes, DOWN, buff=0.4)
 
-        # Draw vertical gridlines every 100 hours
         grid_lines = VGroup()
         for x in range(100, int(x_max) + 1, 100):
             line = Line(axes.c2p(x, 0.5), axes.c2p(x, n_platforms + 0.5), color=GRAY, stroke_opacity=0.3, stroke_width=1)
             grid_lines.add(line)
 
-        # Draw specific x-axis tick marks and labels to match the image
         x_ticks = VGroup()
         x_tick_labels = VGroup()
         for x in range(0, int(x_max) + 1, 100):
             tick = Line(axes.c2p(x, 0.5), axes.c2p(x, 0.5) + DOWN * 0.1, color=WHITE, stroke_width=2)
             x_ticks.add(tick)
-            
             t_lbl = Tex(str(x), font_size=18).next_to(tick, DOWN, buff=0.15)
             x_tick_labels.add(t_lbl)
 
-        # --- 3. COLOR MAPPING (Brewer Set2) ---
         palette = {
             "Android": "#66C2A5",
             "Mac": "#A6D854",
@@ -1141,30 +1091,26 @@ class Presentation(Slide):
             "Other": "#FFD92F"
         }
 
-        # --- 4. BUILD BARS & LABELS ---
         bars = VGroup()
         y_labels = VGroup()
         vals = VGroup()
-        bar_height = 0.75 # Thicker bars since there are only 7 categories
+        bar_height = 0.75
 
         for i, (plat, hours) in enumerate(platform_summary.items(), start=1):
             w = axes.c2p(hours, 0)[0] - axes.c2p(0, 0)[0]
-            color = palette.get(plat, WHITE) # Defaults to white if somehow missing
+            color = palette.get(plat, WHITE)
 
             bar = Rectangle(width=w, height=bar_height, fill_color=color, fill_opacity=1, stroke_width=0)
             bar.move_to(axes.c2p(hours / 2, i))
             bars.add(bar)
 
-            # Platform Name (Y-axis label)
             lbl = Tex(plat, font_size=20).next_to(axes.c2p(0, i), LEFT, buff=0.2)
             y_labels.add(lbl)
 
-            # Hours Value (rounded to 0 decimal places)
             val_str = str(int(round(hours, 0)))
             val = Tex(val_str, font_size=20).next_to(bar, RIGHT, buff=0.15)
             vals.add(val)
 
-        # --- 5. ANIMATE ---
         self.play(
             Create(axes), Create(grid_lines),
             Create(x_ticks), Write(x_tick_labels),
@@ -1172,13 +1118,11 @@ class Presentation(Slide):
         )
         self.wait(0.3)
 
-        # Cascade the bars out from the y-axis
         self.play(
             AnimationGroup(*[GrowFromEdge(bar, LEFT) for bar in bars], lag_ratio=0.1),
             run_time=2.5
         )
-        
-        # Pop in the numbers at the end
+
         self.play(Write(vals))
 
         self.next_slide()
@@ -1189,34 +1133,30 @@ class Presentation(Slide):
         title9 = Tex("Conclusion").to_corner(UL)
         self.wipe(Group(*self.mobjects), title9)
 
-        bullet91_text = r"• \textbf{Behavioral Signatures:} Late-evening weekday listening dominates,\\ with distinct shifts in genre and era preferences over time."
+        bullet91_text = "• Behavioral Signatures: Late-evening weekday listening dominates,\\ with distinct shifts in genre and era preferences over time."
         bullet91 = Tex(bullet91_text, font_size=28, tex_environment="flushleft")
 
-        bullet92_text = r"• \textbf{Engagement Nuance:} Top artists highlight true long-term favorites,\\ while skip rates reveal passive, habit-driven consumption."
+        bullet92_text = "• Engagement Nuance: Top artists highlight true long-term favorites,\\ while skip rates reveal passive, habit-driven consumption."
         bullet92 = Tex(bullet92_text, font_size=28, tex_environment="flushleft")
 
-        bullet93_text = r"• \textbf{Methodological Limits:} Play counts cannot distinguish active from passive\\ listening, and platform differences are confounded by life stages."
+        bullet93_text = "• Methodological Limits: Play counts cannot distinguish active from passive\\ listening, and platform differences are confounded by life stages."
         bullet93 = Tex(bullet93_text, font_size=28, tex_environment="flushleft")
 
-        bullet94_text = r"• \textbf{Data Constraints:} While highly reliable, validity is limited by platform\\ quirks like unrecorded incognito sessions and missing track durations."
+        bullet94_text = "• Data Constraints: While highly reliable, validity is limited by platform\\ quirks like unrecorded incognito sessions and missing track durations."
         bullet94 = Tex(bullet94_text, font_size=28, tex_environment="flushleft")
 
-        bullet95_text = r"• \textbf{Future Extensions:} Next steps include integrating API audio features\\ (tempo, energy) and academic calendars to explore mood-based clusters."
+        bullet95_text = "• Future Extensions: Next steps include integrating API audio features\\ (tempo, energy) and academic calendars to explore mood-based clusters."
         bullet95 = Tex(bullet95_text, font_size=28, tex_environment="flushleft")
 
         bullets9 = VGroup(bullet91, bullet92, bullet93, bullet94, bullet95).arrange(DOWN, aligned_edge=LEFT, buff=0.5)
-        
-        # Anchor to the title, but add a slight indent to the right for standard bullet formatting
+
         bullets9.next_to(title9, DOWN, buff=0.8).align_to(title9, LEFT).shift(RIGHT * 0.5)
 
-        # Animate each bullet fading in and shifting up one by one
         self.play(FadeIn(bullet91, shift=UP))
         self.play(FadeIn(bullet92, shift=UP))
         self.play(FadeIn(bullet93, shift=UP))
         self.play(FadeIn(bullet94, shift=UP))
         self.play(FadeIn(bullet95, shift=UP))
-
-        self.next_slide()
         # ---------------- Slide 9 ----------------
 
 
@@ -1228,11 +1168,14 @@ class Presentation(Slide):
         self.play(Write(bullet10))
         self.wait(1)
 
-        banner = ManimBanner().scale(0.5) 
-        
+        banner = ManimBanner().scale(0.5)
+
         self.play(ReplacementTransform(Group(title10, bullet10), banner))
         self.wait(0.5)
 
         self.play(banner.expand())
-        self.wait(2)
         # ---------------- Slide 10 ----------------
+
+class Test(Slide):
+    def construct(self):
+        pass
