@@ -656,8 +656,6 @@ class Presentation(Slide):
         self.play(Write(vals_left), Write(leader_group))
 
         self.next_slide()
-
-
         # ---------------- Slide 6.2 ----------------
 
 
@@ -772,9 +770,14 @@ class Presentation(Slide):
         rows_era = []
         for i in range(0, len(legend_items_era), N_COLS_ERA):
             chunk = legend_items_era[i:i + N_COLS_ERA]
-            row   = VGroup(*chunk).arrange(RIGHT, buff=0.20)
+            row   = VGroup(*chunk).arrange(RIGHT, buff=0.40)
             rows_era.append(row)
         legend_era = VGroup(*rows_era).arrange(DOWN, buff=0.12)
+        
+        max_width = config.frame_width - 0.8
+        if legend_era.width > max_width:
+            legend_era.scale(max_width / legend_era.width)
+            
         legend_era.next_to(ax_era, DOWN, buff=1.1)
 
         self.play(
@@ -846,7 +849,6 @@ class Presentation(Slide):
         plot_group_genre = VGroup(ax_genre, y_label_genre)
         plot_group_genre.next_to(title7, DOWN, buff=0.35).set_x(0)
 
-        # Y-axis ticks — shifted further left so they don't crowd the y-label
         axis_x_g = ax_genre.c2p(0, 0)[0]
         yticks_g = VGroup()
         for pct_val in [0, 0.25, 0.50, 0.75, 1.0]:
@@ -893,7 +895,6 @@ class Presentation(Slide):
             area_polys.add(poly)
             cumsum_g = upper_g
 
-        # Legend BELOW in 2 rows
         N_COLS_GENRE = 9
         legend_items_genre = []
         for genre in genres_list:
