@@ -481,6 +481,36 @@ class Presentation(Slide):
         self.play(Write(vals_left), Write(vals_right))
 
         self.next_slide()
+        
+        # --- Camera punch-in ---
+        objects_to_scale = Group(*[mob for mob in self.mobjects if mob is not title6])
+        
+        target_group = VGroup(
+            title_right,
+            bars_right[-5:],
+            labels_right[-5:],
+            vals_right[-5:]
+        )
+        
+        scale_factor = config.frame_height / (target_group.height * 1.5)
+        target_center = target_group.get_center()
+        
+        self.play(
+            objects_to_scale.animate
+            .scale(scale_factor, about_point=target_center)
+            .shift(ORIGIN - target_center),
+            run_time=1.5
+        )
+
+        self.next_slide()
+        
+        # --- Camera zoom-out ---
+        self.play(
+            objects_to_scale.animate
+            .shift(target_center)
+            .scale(1 / scale_factor, about_point=target_center),
+            run_time=1.5
+        )
         # ---------------- Slide 6.1 ----------------
 
 
@@ -501,7 +531,6 @@ class Presentation(Slide):
         top_skipped      = skip_by_artist.nlargest(12, 'skip_rate').sort_values('skip_rate', ascending=True)
         top_hours_labels = skip_by_artist.nlargest(10, 'hours')
 
-        # include_ticks=False removes Manim's auto-tick artifact
         ax_left = Axes(
             x_range=[0, 1.18, 0.25],
             y_range=[0.5, 12.5, 1],
@@ -526,7 +555,6 @@ class Presentation(Slide):
             y_axis_config={"include_ticks": False, "include_numbers": False}
         ).move_to([2.6, -0.6, 0])
 
-        # Shared axis_y baseline so both sets of x-ticks align visually
         axis_y_right = ax_right.c2p(0, 0)[1]
 
         xticks_left = VGroup()
@@ -621,7 +649,6 @@ class Presentation(Slide):
             Write(xticks_left), Write(xticks_right),
             Write(yticks_right), Write(labels_left)
         )
-        self.wait(0.5)
         self.play(
             AnimationGroup(*[GrowFromEdge(bar, LEFT) for bar in bars_left], lag_ratio=0.05),
             FadeIn(dots), run_time=3
@@ -629,6 +656,8 @@ class Presentation(Slide):
         self.play(Write(vals_left), Write(leader_group))
 
         self.next_slide()
+
+
         # ---------------- Slide 6.2 ----------------
 
 
