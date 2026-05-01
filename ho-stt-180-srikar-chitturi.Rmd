@@ -4,15 +4,21 @@ author: "Srikar Chitturi"
 date: "`r Sys.Date()`"
 output:
   pdf_document:
-    toc: true
+    toc: false
     number_sections: false
     fig_caption: true
 fontsize: 11pt
-geometry: margin=1in
+geometry: top=0.6in, bottom=0.85in, left=0.85in, right=0.85in
 header-includes:
   - \usepackage{booktabs}
   - \usepackage{float}
   - \floatplacement{figure}{H}
+  - \usepackage[font=small,labelfont=bf,skip=4pt]{caption}
+  - \setlength{\floatsep}{4pt plus 1pt minus 1pt}
+  - \setlength{\textfloatsep}{6pt plus 1pt minus 2pt}
+  - \setlength{\intextsep}{4pt plus 1pt minus 1pt}
+  - \setlength{\abovecaptionskip}{3pt}
+  - \setlength{\belowcaptionskip}{0pt}
 ---
 
 ```{r setup, include=FALSE}
@@ -72,11 +78,11 @@ shuf_pct  <- percent(mean(music$shuffle), 0.1)
 
 # Introduction
 
-People engage with music on a daily basis, yet other than the annual cultural event known as Spotify Wrapped, few ever examine their own listening behavior quantitatively — including me. Recently, I finally made the push to start owning my own music and maintaining my own music library, but in the process of deciding what music to buy by scrolling through my playlists, I realized how little I knew about my own music tastes — what genres I like, my favorite artists, my favorite songs from said artists, even naming a single album from their discography — despite music being an extremely large chunk of how I spend every day. The rest of the time, the music that people listen to is essentially a black box, where if you peeked inside, you'd find the Spotify algorithm - a bot whose sole goal is to rack up the minutes you listen on their platform — belching out the most sonically identical songs to the ones you listened to just before to keep you continually engaged. In my mind, music has become disposable — just some background noise that makes every day just a little less mundane than the one before it. In my wish to change this and learn more about myself from a musical standpoint (and create a cool project), I decided to export my Spotify and Apple Music listening history from the inception of my account, now four years in, in an attempt to answer the question: What is my sonic self?
+People engage with music on a daily basis, yet other than the annual cultural event known as Spotify Wrapped, few ever examine their own listening behavior quantitatively - including me. Recently, I finally made the push to start owning my own music and maintaining my own music library, but in the process of deciding what music to buy, I realized how little I knew about my own music tastes - what genres I like, my favorite artists, my favorite songs from said artists, even naming a single album from an artist's discography - despite music being an extremely large chunk of how I spend every day. I realized that I never chose music to listen to, but rather let the Spotify algorithm - a bot whose sole goal is to rack up the time you spend on their platform - belch out the most sonically identical songs to the ones you listened to before to keep you continually engaged. In my life, music had become disposable - background noise that made every day just a little less mundane than the one before it. Now, on a quest to to learn more about myself from a musical standpoint (and create a cool project), I decided to export my Spotify and Apple Music listening history from the inception of my account - 4 years ago - in an attempt to answer the question: Who am I, and **what is my sonic self?**
 
 ## Dataset
 
-This analysis combines two sources of personal streaming data: an extended streaming history export from Spotify (requested via spotify.com/account/privacy) and a play activity export from Apple Music (requested via privacy.apple.com). Both exports were cleaned and merged using Python and the `pandas` library. Listens under 30 seconds were excluded as they typically represent accidental taps or autoplay noise rather than intentional listening. The resulting dataset spans **`r date_min`** to **`r date_max`**, comprising **`r format(n_records, big.mark=",")`** listens across **`r format(n_artists, big.mark=",")`** unique artists and **`r format(n_tracks, big.mark=",")`** unique tracks, totaling **`r format(total_hrs, big.mark=",")`** hours — of which `r format(n_spotify, big.mark=",")` records are from Spotify and `r format(n_apple, big.mark=",")` from Apple Music. Genre tags were sourced from the Apple Music library export, which contained metadata for 9,326 tracks, achieving 90.5% genre coverage across the combined dataset. Genres were normalized from 68 raw tags into 12 broad buckets (e.g., "Hip-Hop/Rap," "Trap," and "Drill" all mapped to "Rap & Hip-Hop").
+This analysis combines two sources of personal streaming data: an extended streaming history export from Spotify and a play activity export from Apple Music. Both exports were cleaned and merged using Python and the `pandas` library. Listens under 30 seconds were excluded as they typically represent accidental taps or autoplay noise rather than intentional listening. The resulting dataset spans **`r date_min`** to **`r date_max`**, comprising **`r format(n_records, big.mark=",")`** listens across **`r format(n_artists, big.mark=",")`** unique artists and **`r format(n_tracks, big.mark=",")`** unique tracks, totaling **`r format(total_hrs, big.mark=",")`** hours - of which `r format(n_spotify, big.mark=",")` records are from Spotify and `r format(n_apple, big.mark=",")` from Apple Music. Genre tags were sourced from the Apple Music library export, which contained metadata for 9,326 tracks, achieving 90.5% genre coverage across the combined dataset. Genres were normalized from 68 raw tags into 12 broad buckets (e.g., "Hip-Hop/Rap," "Trap," and "Drill" all mapped to "Rap & Hip-Hop").
 
 ## Research Questions
 
@@ -89,15 +95,13 @@ In this journey to learn about my "sonic self," this project seeks to answer fou
 
 I anticipate that behavioral signals like skip rate and average play duration will tell a more honest story than raw play counts alone, and that the era analysis will reveal distinct phases of musical taste corresponding to different periods of life.
 
----
-
-# Results
-
 All analysis was performed in R (R Core Team, 2024) using the `tidyverse` suite (Wickham et al., 2019), `lubridate` (Grolemund & Wickham, 2011), `scales`, and `patchwork`. Descriptive summaries, time series aggregation, skip rate analysis, and stacked area charts were the primary methods used. Skip rate analysis was restricted to artists with at least 20 plays to guard against small-sample noise.
+
+---
 
 ## Research Question 1: Temporal Patterns
 
-```{r rq1-plots, fig.height=5.5, fig.cap="Top: Monthly listening hours by source, with an overall smoothed trend. Bottom: Play count by hour of day and day of week."}
+```{r rq1-plots, fig.height=4.0, fig.cap="Top: Monthly listening hours by source, with an overall smoothed trend. Bottom: Play count by hour of day and day of week."}
 monthly <- music |>
   group_by(month_label, source_label) |>
   summarise(hours = sum(minutes_played) / 60, .groups = "drop")
@@ -125,7 +129,7 @@ heatmap_data <- music |>
 
 p_heatmap <- ggplot(heatmap_data, aes(hour, day_of_week, fill = n)) +
   geom_tile(color = "white", linewidth = 0.25) +
-  scale_fill_gradient(low = "#1a1a2e", high = "#1DB954") +
+  scale_fill_gradient(low = "#1a1a2e", high = "hotpink") +
   scale_x_continuous(breaks = c(0, 6, 12, 18, 23),
                      labels = c("12 am","6 am","12 pm","6 pm","11 pm")) +
   labs(x = "Hour of day", y = NULL, fill = "Plays") +
@@ -134,11 +138,13 @@ p_heatmap <- ggplot(heatmap_data, aes(hour, day_of_week, fill = n)) +
 p_monthly / p_heatmap
 ```
 
-The first plot - showing monthly listening volume - displays clear variation over the study period, with the smoothed trendline revealing periods of heightened and diminished engagement; This visual shows that from my streaming beginnings, my overall music listening has went down drastically, hitting a low in December 2024, but has began to gradually increase from that low point. The transition from Spotify (green) to Apple Music (red) is visible in the much later months of the timeline. The heatmap below exposes consistent behavioral structure: listening concentrates heavily in the late afternoon and evening hours (roughly 4 PM–midnight), with the highest density on weekday evenings. This perfectly coincides with my end-of-day wind-down and late-night study sessions. Weekend mornings show a noticeably lighter footprint, suggesting that weekends involve less passive background listening, which perfectly reflects my weekend routine of the past few years
+The first plot - showing monthly listening volume - displays clear variation over the study period, with the smoothed trendline revealing periods of heightened and diminished engagement; This visual shows that from my streaming beginnings, my overall music listening has went down drastically, hitting a low in December 2024, but has began to gradually increase from that low point. The transition from Spotify (green) to Apple Music (red) is visible in the much later months of the timeline, where it becomes the dominant listening platform around October 2025.
+
+The heatmap below exposes a very consistent behavior structure, where the large majority of listening concentrates heavily in the late afternoon and evening hours (roughly 4 PM–midnight), with the overall listening density reaching the highest on weekday evenings. These "routines" perfectly reflect my weekly routines, with my weekday evening to late-night study sessions having the highest music listening concentration, and the weekend overall (especially mornings) having a noticeably lighter footprint, which I can confirm with my own listening habits.
 
 ## Research Question 2: Engagement — Who Do I Actually Listen To?
 
-```{r rq2-top, fig.height=5, fig.cap="Left: Top 15 artists by total hours played. Right: Top 15 tracks by play count. Hours-based ranking gives a more honest picture of engagement than play count alone."}
+```{r rq2-top, fig.height=4.5, fig.cap="Left: Top 15 artists by total hours played. Right: Top 15 tracks by play count. Hours-based ranking gives a more honest picture of engagement than play count alone."}
 top_artists <- music |>
   group_by(artist_name) |>
   summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
@@ -151,14 +157,14 @@ top_tracks <- music |>
   slice_max(plays, n = 15)
 
 p_artists <- ggplot(top_artists, aes(hours, fct_reorder(artist_name, hours))) +
-  geom_col(fill = "#1DB954") +
+  geom_col(fill = "purple") +
   geom_text(aes(label = round(hours, 1)), hjust = -0.1, size = 2.8) +
   scale_x_continuous(expand = expansion(mult = c(0, 0.18))) +
   labs(title = "Top 15 Artists", x = "Hours", y = NULL) +
   theme_minimal(base_size = 9)
 
 p_tracks <- ggplot(top_tracks, aes(plays, fct_reorder(label, plays))) +
-  geom_col(fill = "#1DB954") +
+  geom_col(fill = "purple") +
   geom_text(aes(label = plays), hjust = -0.1, size = 2.5) +
   scale_x_continuous(expand = expansion(mult = c(0, 0.18))) +
   labs(title = "Top 15 Tracks", x = "Plays", y = NULL) +
@@ -167,9 +173,15 @@ p_tracks <- ggplot(top_tracks, aes(plays, fct_reorder(label, plays))) +
 p_artists + p_tracks
 ```
 
-Ranking artists by total hours played rather than raw play count gives a more honest measure of genuine engagement — an artist with shorter average track lengths would be unfairly penalized by a play-count ranking. The top artists chart reveals the clear long-term anchors of the library: artists that appear here have accumulated not just many plays but many *minutes*, meaning songs were actually listened to rather than skipped. The top tracks chart identifies the songs returned to most obsessively across the full four-year span.
+Total hours played was used as the ranking metric rather than play count, since play count unfairly penalizes artists with shorter average track lengths - hours listened is a more honest measure of genuine engagement.
 
-```{r rq2-skip, fig.height=4, fig.cap="Left: Most-skipped artists among those with at least 20 plays. Right: Artist engagement scatter — hours played vs skip rate, with bubble size proportional to total plays. Top 10 artists by hours labelled."}
+The "Top 15 Artists" chart immediately establishes a clear outlier: Jamiroquai dominates at nearly *100 hours*, with George Michael a distant second at ~56 hours. From third place onward, the artists are all quite close to each other in listening hours - the drop-off is steep at the top, but the rest of the ranking is remarkably flat. This clustering is itself worth noting, as it suggests that there isn't a strong third "favorite" artist so much as a loose collection of artists I engage with at roughly the same casual level. It also raises a question that the songs chart helps answer - why do these artists even make the top 15 at all, if none of them stand out meaningfully from each other in hours?
+
+Shifting focus to the Top 15 Songs chart, it strongly reinforces this picture - and adds nuance. Jamiroquai holds 4 of the top 5 most-played songs, and 7 of the 15 overall, confirming that my engagement with Jamiroquai runs deep across their catalog rather than being concentrated in just a few tracks. George Michael, despite being the second-ranked artist, contributes only two songs to the top 15 - hinting that my hours with him are narrower in scope than the artist ranking alone would suggest.
+
+The more telling pattern emerges at the bottom of the artist rankings: artists like Daft Punk appear in the top 15 because of a single standout song - Get Lucky - rather than any sustained catalog listening. Robin Thicke's Blurred Lines cracking the top 5 songs while Thicke himself ranks a distant fifth among artists is the starkest example of this. Taken together, the two plots suggest that outside of Jamiroquai, my listening habits are song-driven rather than artist-driven - I gravitate toward individual tracks I really like rather than exploring a full catalog, which is somewhat in line with how algorithmic recommendation systems surface and reinforce listening behavior.
+
+```{r rq2-skip, fig.height=3.5, fig.cap="Left: Most-skipped artists among those with at least 20 plays. Right: Artist engagement scatter - hours played vs skip rate, with bubble size proportional to total plays. Top 10 artists by hours labelled."}
 skip_by_artist <- music |>
   group_by(artist_name) |>
   summarise(plays     = n(),
@@ -181,7 +193,7 @@ skip_by_artist <- music |>
 p_skips <- skip_by_artist |>
   slice_max(skip_rate, n = 12) |>
   ggplot(aes(skip_rate, fct_reorder(artist_name, skip_rate))) +
-  geom_col(fill = "#E13300") +
+  geom_col(fill = "purple") +
   geom_text(aes(label = percent(skip_rate, 1)), hjust = -0.1, size = 3) +
   scale_x_continuous(labels = percent,
                      expand  = expansion(mult = c(0, 0.18))) +
@@ -189,7 +201,7 @@ p_skips <- skip_by_artist |>
   theme_minimal(base_size = 9)
 
 p_engagement <- ggplot(skip_by_artist, aes(hours, skip_rate)) +
-  geom_point(aes(size = plays), alpha = 0.55, color = "#1DB954") +
+  geom_point(aes(size = plays), alpha = 0.55, color = "#E13300") +
   geom_text_repel(data = skip_by_artist |> slice_max(hours, n = 10), aes(label = artist_name), size = 2.5, box.padding = 0.8, point.padding = 0.5, max.overlaps = Inf, segment.color = "grey40", segment.size = 0.4, force = 8, force_pull = 0.1, nudge_x = 50, direction = "y", hjust = 0, min.segment.length = 0, arrow = arrow(length = unit(0.008, "npc"), type = "open")) +
   scale_y_continuous(labels = percent, transform = "sqrt", breaks = c(0, 0.10, 0.25, 0.50, 0.75, 1.0), expand = expansion(mult = c(0.02, 0.08))) +
   scale_size_continuous(range = c(1.5, 9)) +
@@ -200,11 +212,15 @@ p_engagement <- ggplot(skip_by_artist, aes(hours, skip_rate)) +
 p_skips + p_engagement + plot_layout(widths = c(1.75, 3))
 ```
 
-The skip rate chart surfaces artists whose music gets queued out of habit rather than genuine enthusiasm — a signal of passive listening. The engagement scatter tells a richer story: artists in the top-right quadrant (high hours, high skip rate) are consumed in large quantities but finished far less reliably, suggesting a relationship built more on familiarity than active appreciation. Artists in the bottom-right (high hours, low skip rate) represent the true core of the library — music that, once started, is almost always seen through to the end. The overall skip rate across the dataset was `r skip_pct`, and `r shuf_pct` of all listens occurred on shuffle.
+This section of the analysis is a lot less nuanced and black-and-white - this plot shows a converse relationship with my music, specifically, who I skip the most. Similarly to the previous section, there is a clear outlier: Yuno Miles has the highest skip rate at 86%, and then everyone else simply peters out at similar rates with little variation. The gap between Yuno Miles and the second-most-skipped artist, The Trashmen at 55%, is actually larger than the gap between The Trashmen and the bottom of the chart at ~35%, which further underscores just how much of an outlier Yuno Miles is - I almost never let a Yuno Miles track play through.
+
+Shifting focus to the Hours vs Skip Rate scatter plot, the picture becomes more interesting. The bubble size encodes total play count, and the most immediate takeaway is that the largest bubbles - Jamiroquai, George Michael, and Wham! - all cluster closer to the bottom-right: high hours, low skip rates. This strongly corroborates the findings from the previous plot, confirming that my most-listened artists aren't just passively accumulated hours, but reflect genuine engagement. Robin Thicke's low skip rate (~10%) is also consistent with the earlier observation that Blurred Lines is a standout track I actually commit to listening through.
+
+The more interesting cases are the labeled artists sitting in the upper half of the skip rate axis. The Weeknd and Kendrick Lamar both carry skip rates of ~75% and ~65% respectively, despite having a non-trivial number of plays - suggesting I've given them a fair number of chances but rarely follow through on a full listen. Kanye West and Rick Astley, on the other hand, sit near 0% skip rate with moderate hours, implying that when I do put them on, I mean it. The vast majority of the unlabeled points cluster tightly near the left edge with low hours and moderate skip rates (~25%), which likely represents artists I've sampled briefly but never committed to - consistent with the song-driven listening pattern identified earlier.
 
 ## Research Question 3: Taste Evolution Over Time
 
-```{r rq3-plots, fig.height=5.5, fig.cap="Top: Top 5 artists by hours in each 6-month window. Bottom: Genre share of listening by 6-month window."}
+```{r rq3-plots, fig.height=5.0, fig.cap="Top: Top 5 artists by hours in each 6-month window. Bottom: Genre share of listening by 6-month window."}
 era_data <- music |>
   mutate(half_year = floor_date(date, "6 months")) |>
   group_by(half_year, artist_name) |>
@@ -212,16 +228,6 @@ era_data <- music |>
   group_by(half_year) |>
   slice_max(hours, n = 5) |>
   ungroup()
-
-p_era <- ggplot(era_data, aes(half_year, hours, fill = artist_name)) +
-  geom_col(position = "stack") +
-  scale_x_date(date_labels = "%b '%y", date_breaks = "6 months") +
-  labs(x = NULL, y = "Hours", fill = "Artist") +
-  theme_minimal(base_size = 10) +
-  theme(legend.position = "right",
-        legend.text     = element_text(size = 6),
-        legend.key.size = unit(0.4, "cm"),
-        axis.text.x     = element_text(angle = 45, hjust = 1))
 
 genre_era <- music |>
   filter(genre != "Other") |>
@@ -232,9 +238,23 @@ genre_era <- music |>
   mutate(pct = hours / sum(hours)) |>
   ungroup()
 
+x_limits <- range(era_data$half_year) + c(0, 180)
+
+p_era <- ggplot(era_data, aes(half_year, hours, fill = artist_name)) +
+  geom_col(position = "stack") +
+  scale_x_date(date_labels = "%b '%y", date_breaks = "6 months",
+               limits = x_limits) +
+  labs(x = NULL, y = "Hours", fill = "Artist") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "right",
+        legend.text     = element_text(size = 6),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x     = element_text(angle = 45, hjust = 1))
+
 p_genre_era <- ggplot(genre_era, aes(half_year, pct, fill = genre)) +
   geom_area(position = "stack") +
-  scale_x_date(date_labels = "%b '%y", date_breaks = "6 months") +
+  scale_x_date(date_labels = "%b '%y", date_breaks = "6 months",
+               limits = x_limits) +
   scale_y_continuous(labels = percent) +
   labs(x = NULL, y = "Share of listening", fill = "Genre") +
   theme_minimal(base_size = 10) +
@@ -246,7 +266,17 @@ p_genre_era <- ggplot(genre_era, aes(half_year, pct, fill = genre)) +
 p_era / p_genre_era
 ```
 
-The era chart reveals the distinct "phases" of musical life across the four-year span. Artists that dominate a single window and then vanish mark discovery periods — a burst of enthusiasm followed by saturation. Artists that recur across multiple windows are the true long-term fixtures of the library. The genre area chart below provides the broader structural view: the relative balance of Rap & Hip-Hop, Pop, and R&B/Soul over time, and whether any period saw a meaningful stylistic pivot toward or away from a genre. Taken together, these two panels answer the question of not just *who* was listened to, but *when* and in *what context* of taste.
+The first thing that jumps out in the top chart is the massive spike in July '22, reaching ~130 hours - dwarfing every other period in the dataset by a significant margin. The bar is dominated by Jamiroquai (~66h), with Robin Thicke (~21h), Daft Punk (~20h), Wham! (~14h), and Rick Astley (~13h) filling out the rest - making this less of a "high listening month" and more of a *Jamiroquai hyperfixation event*. The genre chart corroborates this: around October '22, R&B & Soul (blue) holds the dominant share, with Pop beginning to creep up alongside it as Wham! pulls the composition slightly away from pure Acid Jazz.
+
+The George Michael phase arrives in the following period - the Jan '23 bar is where he takes over at ~26h, with Jamiroquai still present in second. The genre chart reflects this shift clearly: from April '23 onward, Pop (teal) overtakes R&B & Soul and holds the majority share for the following year, anchored almost entirely by George Michael.
+
+The pre-July '22 period is worth a brief look too. The genre chart from April '22 shows R&B & Soul accounting for nearly 70% of listening on its own - so the starting point was already heavily anchored in one genre, with Electronic & Dance holding a modest secondary share. The July '22 spike intensified that dominance rather than introducing anything dramatically new.
+
+Shifting focus to January '24, the resurgence in hours is driven primarily by Kanye West (~19h) and Metro Boomin (~11h). The genre chart reflects this immediately: from Apr '24 onward, Rap & Hip-Hop (purple) surges to ~65% of listening and stays there, holding dominance through October '25 and into January '26. This isn't a punctuated phase, but rather a full genre pivot that has outlasted every prior shift in the dataset.
+
+By January '25 and July '25, total hours drop to their lowest levels (reflected in the first research question) - the bars are visibly small and highly fragmented, with no single artist commanding meaningful hours. The Rap & Hip-Hop dominance in the genre chart persists through this low-volume period regardless, suggesting the genre preference held even as overall listening volume declined.
+
+The overarching narrative is one of two inflection points: a July '22 Jamiroquai-driven R&B & Soul peak that transitioned into a George Michael-led Pop phase from Jan '23, followed by a January '24 Kanye-driven pivot into Rap & Hip-Hop that has defined the genre composition ever since.
 
 ## Research Question 4: Platform Comparison
 
@@ -268,7 +298,7 @@ kable(platform_tbl,
       booktabs = TRUE)
 ```
 
-```{r rq4-platform-bar, fig.height=2.8, fig.cap="Total listening hours by device platform across both services."}
+```{r rq4-platform-bar, fig.height=2.4, fig.cap="Total listening hours by device platform across both services."}
 platform_summary <- music |>
   group_by(platform_clean) |>
   summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
@@ -285,27 +315,29 @@ ggplot(platform_summary,
   theme(legend.position = "none")
 ```
 
-The platform comparison table reveals whether Spotify and Apple Music produced meaningfully different listening patterns. Differences in average minutes per play and skip rate between the two services may reflect distinct interface designs and recommendation algorithms — or they may simply reflect the different periods of life during which each was used, making direct causal attribution difficult. The device breakdown chart further contextualizes where listening happens physically: Android and Mac dominate, with Cast/Speaker representing passive background listening that is likely under-counted in skip and completion metrics since casting sessions are harder to deliberately skip.
+The platform breakdown reveals two distinct dimensions worth examining separately: where I listen (device) and what service I use to do it.
+
+The device chart is unambiguous - Android (phone) leads at 431 hours, nearly double Mac's (laptop) 207 hours, with Cast/Speaker (61h) and Windows (33h) trailing far behind. The "Apple Music" bar (36h) is worth a brief note: it isn't a separate device, but rather a data limitation - Apple Music's export logs all plays under a single internal platform tag regardless of the underlying device, making it impossible to attribute those hours to Android or Mac. It sits as its own bar because that device information simply doesn't exist in the export. Android's dominance most likely reflects the simple fact that my phone is always on me whereas my Mac isn't, though it's tempting to read more into it: Android hours could suggest a lot of on-the-go listening, while Mac's 207 hours might reflect more stationary, study-session listening. Whether that distinction actually holds, or whether I'm just as often sitting still with my phone playing, is difficult to untangle from this data alone.
+
+The Spotify vs Apple Music comparison is worth approaching carefully, as there are a few confounds that limit how directly the two can be compared. The volume gap (14,742 vs 782 plays) simply reflects that I've been on Spotify for most of the dataset's timeframe - Apple Music is a recent addition, so the sample is inherently smaller and likely incomplete. This matters for the skip rate comparison: Spotify at 21.0% vs Apple Music's 2.4% is a striking gap, but the Apple Music figure is based on a fraction of the data and may not fully capture all plays given the limitations of its export format. Beyond the sample size issue, the two platforms may also reflect fundamentally different listening modes - actively choosing songs and letting autoplay fill the gaps on Spotify, versus picking an album and committing to it on Apple Music - which would suppress Apple Music's skip rate regardless of recommendation quality. Taken together, these confounds mean the skip rate gap is probably directionally correct - my Apple Music listening is more intentional - but the magnitude of the difference shouldn't be read as a precise or reliable metric. A longer, more balanced Apple Music history would be needed to draw any stronger conclusions.
 
 ---
 
 # Conclusion
 
 ## Summary
-
-This analysis transformed over four years of personal streaming history into a quantitative portrait of musical identity. Monthly listening trends revealed clear ebbs and flows in engagement, while the temporal heatmap confirmed that late-evening weekday listening is the dominant behavioral signature. The top artist and track rankings established the true long-term anchors of the library, while the skip rate and engagement scatter provided an honest counterpoint — surfacing artists consumed out of habit rather than genuine enthusiasm. The era and genre evolution charts told the story of a listener whose taste has shifted meaningfully over time, with distinct phases visible in both artist dominance and genre balance.
+This analysis transformed over four years of personal streaming history into a quantitative portrait of musical identity. Monthly listening trends revealed clear ebbs and flows in engagement, while the temporal heatmap confirmed that late-evening weekday listening is the dominant behavioral signature. The top artist and track rankings established Jamiroquai as the undisputed long-term anchor of the library - and revealed that outside of that outlier, listening habits are largely *song-driven* rather than artist-driven. The skip rate and engagement scatter provided an honest counterpoint, surfacing artists accumulated through algorithmic exposure rather than genuine enthusiasm. The era and genre evolution charts told the story of a listener whose taste has shifted meaningfully across two distinct inflection points: a mid-2022 Jamiroquai-driven R&B & Soul peak that transitioned into a George Michael-led Pop phase, followed by a Kanye West-driven pivot into Rap & Hip-Hop from early 2024 onward that has defined the genre composition ever since.
 
 ## Critique of Methods
-
-Several limitations are worth acknowledging. The `skipped` field in Spotify's export is inconsistently populated and known to undercount skips; the supplementary `reason_end` flag partially addresses this but only captures explicit button-press skips. Play counts and hours played cannot distinguish active from passive listening — a song playing in the background during a study session is recorded identically to one listened to with full attention. The platform comparison is confounded by time: Spotify and Apple Music were used during different life periods, making it difficult to separate platform-specific effects from life-stage effects.
+Several limitations are worth acknowledging. As discussed in RQ2, the `skipped` field is inconsistently populated and the platform comparison is confounded by differing listening modes, sample sizes, and life periods - limiting how precisely cross-platform conclusions can be drawn. More broadly, play counts and hours played cannot distinguish active from passive listening, which directly undermines any strong claims about "genuine engagement" made throughout this analysis - a song playing in the background during a study session is recorded identically to one listened to with full attention. Genre classifications reflect Apple's own taxonomy rather than an independent standard, which may not always align with conventional genre boundaries.
 
 ## Reliability and Validity
+Both datasets were exported directly from the platforms, making them highly reliable records of what was logged. Validity, however, is constrained by platform-level inconsistencies: Spotify exports device-level metadata while Apple Music does not, Spotify does not export full track duration preventing exact completion rate calculations, and listening in Spotify's incognito mode is unrecorded - introducing an unquantifiable gap. Cross-platform comparisons should be treated as *directionally* informative rather than precise.
 
-Both datasets were exported directly from the platforms, making them highly reliable records of what was logged. However, validity is constrained by what each platform chooses to capture. Spotify does not export full track duration, preventing exact completion rate calculations for that dataset. Listening in Spotify's incognito mode is not recorded, introducing an unquantifiable gap. Genre data was sourced from the Apple Music library rather than a canonical music database, meaning genre assignments reflect Apple's taxonomy rather than an independent standard.
+### Future Directions
+Many natural extensions exist. Enriching the dataset with audio features (tempo, valence, energy) via the Spotify Web API would enable mood-based clustering - asking not just *who* was listened to but *how it felt*, and whether the genre shifts in RQ3 correspond to meaningful changes in sonic preference beyond artist and label. A passive listening flag - derived from session length, shuffle state, or background app status - could sharpen the distinction between intentional and incidental plays, which is arguably the single biggest validity gap in the current dataset. Overlaying academic calendar dates could reveal whether listening behavior shifts during exam periods versus breaks, and would help disentangle the passive study-session confound that limits engagement claims throughout. Finally, as the Apple Music library grows, revisiting the platform comparison with a more temporally balanced sample would allow a more reliable assessment of whether the behavioral differences observed are genuine platform effects or simply artifacts of a limited sample.
 
-## Future Directions
-
-Several natural extensions exist. Enriching the dataset with audio features (tempo, valence, energy) via the Spotify Web API would enable mood-based clustering — asking not just *who* was listened to, but *how it felt*. Overlaying academic calendar dates could reveal whether listening behavior shifts during exam periods versus breaks. Finally, incorporating lyrics-based sentiment analysis could explore whether emotional valence in music choices correlates with time of year or time of day.
+All in all, I would say that this report effectively attained the goal that I had set forth at the beginning of this analysis. Now, if you'll excuse me, I have some music to purchase...
 
 ---
 
