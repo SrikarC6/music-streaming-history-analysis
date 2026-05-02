@@ -101,6 +101,8 @@ Streaming_History_Audio_*.json
 apple-music-library-tracks.json
 apple-music-play-activity.csv
 listening-history-clean.csv
+*.zip
+*.mov
 
 # Manim / Manim Slides generated media / Other related Manim assets
 **/media/

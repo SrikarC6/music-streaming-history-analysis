@@ -39,7 +39,7 @@ library(ggrepel)
 ```
 
 ```{r load-data, include=FALSE}
-df <- read_csv("listening-history-clean.csv", show_col_types = FALSE) |>
+df <- read_csv("listening-history-clean.csv", show_col_types = FALSE) %>%
   mutate(
     date = ymd(date),
     month_label = ym(month_label),
@@ -60,7 +60,7 @@ df <- read_csv("listening-history-clean.csv", show_col_types = FALSE) |>
                           "apple_music" = "Apple Music")
   )
 
-music <- df |> filter(!is_short_play)
+music <- df %>% filter(!is_short_play)
 
 n_records <- nrow(music)
 n_artists <- n_distinct(music$artist_name)
@@ -68,8 +68,8 @@ n_tracks  <- n_distinct(music$track_name)
 date_min  <- min(music$date)
 date_max  <- max(music$date)
 total_hrs <- round(sum(music$minutes_played) / 60, 0)
-n_spotify <- music |> filter(source == "spotify") |> nrow()
-n_apple   <- music |> filter(source == "apple_music") |> nrow()
+n_spotify <- music %>% filter(source == "spotify") %>% nrow()
+n_apple   <- music %>% filter(source == "apple_music") %>% nrow()
 skip_pct  <- percent(mean(music$skipped), 0.1)
 shuf_pct  <- percent(mean(music$shuffle), 0.1)
 ```
@@ -102,15 +102,15 @@ All analysis was performed in R (R Core Team, 2024) using the `tidyverse` suite 
 ## Research Question 1: Temporal Patterns
 
 ```{r rq1-plots, fig.height=4.0, fig.cap="Top: Monthly listening hours by source, with an overall smoothed trend. Bottom: Play count by hour of day and day of week."}
-monthly <- music |>
-  group_by(month_label, source_label) |>
+monthly <- music %>%
+  group_by(month_label, source_label) %>%
   summarise(hours = sum(minutes_played) / 60, .groups = "drop")
 
 p_monthly <- ggplot(monthly, aes(month_label, hours, fill = source_label)) +
   geom_col() +
   geom_smooth(
-    data = music |>
-      group_by(month_label) |>
+    data = music %>%
+      group_by(month_label) %>%
       summarise(hours = sum(minutes_played) / 60, .groups = "drop"),
     aes(month_label, hours),
     inherit.aes = FALSE,
@@ -123,8 +123,8 @@ p_monthly <- ggplot(monthly, aes(month_label, hours, fill = source_label)) +
   theme(axis.text.x    = element_text(angle = 45, hjust = 1),
         legend.position = "top")
 
-heatmap_data <- music |>
-  count(day_of_week, hour) |>
+heatmap_data <- music %>%
+  count(day_of_week, hour) %>%
   complete(day_of_week, hour = 0:23, fill = list(n = 0))
 
 p_heatmap <- ggplot(heatmap_data, aes(hour, day_of_week, fill = n)) +
@@ -145,15 +145,15 @@ The heatmap below exposes a very consistent behavior structure, where the large 
 ## Research Question 2: Engagement — Who Do I Actually Listen To?
 
 ```{r rq2-top, fig.height=4.5, fig.cap="Left: Top 15 artists by total hours played. Right: Top 15 tracks by play count. Hours-based ranking gives a more honest picture of engagement than play count alone."}
-top_artists <- music |>
-  group_by(artist_name) |>
-  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
+top_artists <- music %>%
+  group_by(artist_name) %>%
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") %>%
   slice_max(hours, n = 15)
 
-top_tracks <- music |>
-  group_by(track_name, artist_name) |>
-  summarise(plays = n(), .groups = "drop") |>
-  mutate(label = paste0(track_name, "\n(", artist_name, ")")) |>
+top_tracks <- music %>%
+  group_by(track_name, artist_name) %>%
+  summarise(plays = n(), .groups = "drop") %>%
+  mutate(label = paste0(track_name, "\n(", artist_name, ")")) %>%
   slice_max(plays, n = 15)
 
 p_artists <- ggplot(top_artists, aes(hours, fct_reorder(artist_name, hours))) +
@@ -182,16 +182,16 @@ Shifting focus to the Top 15 Songs chart, it strongly reinforces this picture - 
 The more telling pattern emerges at the bottom of the artist rankings: artists like Daft Punk appear in the top 15 because of a single standout song - Get Lucky - rather than any sustained catalog listening. Robin Thicke's Blurred Lines cracking the top 5 songs while Thicke himself ranks a distant fifth among artists is the starkest example of this. Taken together, the two plots suggest that outside of Jamiroquai, my listening habits are song-driven rather than artist-driven - I gravitate toward individual tracks I really like rather than exploring a full catalog, which is somewhat in line with how algorithmic recommendation systems surface and reinforce listening behavior.
 
 ```{r rq2-skip, fig.height=3.5, fig.cap="Left: Most-skipped artists among those with at least 20 plays. Right: Artist engagement scatter - hours played vs skip rate, with bubble size proportional to total plays. Top 10 artists by hours labelled."}
-skip_by_artist <- music |>
-  group_by(artist_name) |>
+skip_by_artist <- music %>%
+  group_by(artist_name) %>%
   summarise(plays     = n(),
             skip_rate = mean(skipped),
             hours     = sum(minutes_played) / 60,
-            .groups   = "drop") |>
+            .groups   = "drop") %>%
   filter(plays >= 20)
 
-p_skips <- skip_by_artist |>
-  slice_max(skip_rate, n = 12) |>
+p_skips <- skip_by_artist %>%
+  slice_max(skip_rate, n = 12) %>%
   ggplot(aes(skip_rate, fct_reorder(artist_name, skip_rate))) +
   geom_col(fill = "purple") +
   geom_text(aes(label = percent(skip_rate, 1)), hjust = -0.1, size = 3) +
@@ -202,7 +202,7 @@ p_skips <- skip_by_artist |>
 
 p_engagement <- ggplot(skip_by_artist, aes(hours, skip_rate)) +
   geom_point(aes(size = plays), alpha = 0.55, color = "#E13300") +
-  geom_text_repel(data = skip_by_artist |> slice_max(hours, n = 10), aes(label = artist_name), size = 2.5, box.padding = 0.8, point.padding = 0.5, max.overlaps = Inf, segment.color = "grey40", segment.size = 0.4, force = 8, force_pull = 0.1, nudge_x = 50, direction = "y", hjust = 0, min.segment.length = 0, arrow = arrow(length = unit(0.008, "npc"), type = "open")) +
+  geom_text_repel(data = skip_by_artist %>% slice_max(hours, n = 10), aes(label = artist_name), size = 2.5, box.padding = 0.8, point.padding = 0.5, max.overlaps = Inf, segment.color = "grey40", segment.size = 0.4, force = 8, force_pull = 0.1, nudge_x = 50, direction = "y", hjust = 0, min.segment.length = 0, arrow = arrow(length = unit(0.008, "npc"), type = "open")) +
   scale_y_continuous(labels = percent, transform = "sqrt", breaks = c(0, 0.10, 0.25, 0.50, 0.75, 1.0), expand = expansion(mult = c(0.02, 0.08))) +
   scale_size_continuous(range = c(1.5, 9)) +
   labs(title = "Hours vs Skip Rate",
@@ -220,28 +220,43 @@ The more interesting cases are the labeled artists sitting in the upper half of 
 
 ## Research Question 3: Taste Evolution Over Time
 
-```{r rq3-plots, fig.height=5.0, fig.cap="Top: Top 5 artists by hours in each 6-month window. Bottom: Genre share of listening by 6-month window."}
-era_data <- music |>
-  mutate(half_year = floor_date(date, "6 months")) |>
-  group_by(half_year, artist_name) |>
-  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
-  group_by(half_year) |>
-  slice_max(hours, n = 5) |>
+```{r rq3-plots, fig.height=6.5, fig.cap="Top: Top 5 artists by hours in each 6-month window. Bottom: Genre share of listening by 6-month window."}
+era_data <- music %>%
+  mutate(half_year = floor_date(date, "6 months")) %>%
+  group_by(half_year, artist_name) %>%
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") %>%
+  group_by(half_year) %>%
+  slice_max(hours, n = 5) %>%
   ungroup()
 
-genre_era <- music |>
-  filter(genre != "Other") |>
-  mutate(half_year = floor_date(date, "6 months")) |>
-  group_by(half_year, genre) |>
-  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
-  group_by(half_year) |>
-  mutate(pct = hours / sum(hours)) |>
+genre_era <- music %>%
+  filter(genre != "Other") %>%
+  mutate(half_year = floor_date(date, "6 months")) %>%
+  group_by(half_year, genre) %>%
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") %>%
+  group_by(half_year) %>%
+  mutate(pct = hours / sum(hours)) %>%
   ungroup()
 
 x_limits <- range(era_data$half_year) + c(0, 180)
 
+# Maximally distinct palette for artists (35 hand-picked colors varying
+# hue, saturation, AND lightness — based on Kelly's max-contrast set + extras)
+distinct35 <- c(
+  "#E6194B", "#3CB44B", "#FFE119", "#4363D8", "#F58231",
+  "#911EB4", "#42D4F4", "#F032E6", "#BFEF45", "#FABED4",
+  "#469990", "#DCBEFF", "#9A6324", "#800000", "#AAFFC3",
+  "#808000", "#000075", "#A9A9A9", "#FFFAC8", "#000000",
+  "#E6BEFF", "#AA6E28", "#FFFFD4", "#0082C8", "#F58282",
+  "#B3DE69", "#BC80BD", "#FDB462", "#80B1D3", "#FB8072",
+  "#CCEBC5", "#FFED6F", "#8DD3C7", "#BEBADA", "#D9D9D9"
+)
+artist_levels <- sort(unique(era_data$artist_name))
+artist_colors <- setNames(distinct35[seq_along(artist_levels)], artist_levels)
+
 p_era <- ggplot(era_data, aes(half_year, hours, fill = artist_name)) +
   geom_col(position = "stack") +
+  scale_fill_manual(values = artist_colors) +
   scale_x_date(date_labels = "%b '%y", date_breaks = "6 months",
                limits = x_limits) +
   labs(x = NULL, y = "Hours", fill = "Artist") +
@@ -251,8 +266,18 @@ p_era <- ggplot(era_data, aes(half_year, hours, fill = artist_name)) +
         legend.key.size = unit(0.4, "cm"),
         axis.text.x     = element_text(angle = 45, hjust = 1))
 
+# Distinct palette for genres — Paired + Set1 combined (up to 21 colors)
+genre_pool <- c(
+  RColorBrewer::brewer.pal(12, "Paired"),
+  RColorBrewer::brewer.pal(9, "Set1")
+)
+genre_pool <- unique(genre_pool)
+genre_levels <- sort(unique(genre_era$genre))
+genre_colors <- setNames(genre_pool[seq_along(genre_levels)], genre_levels)
+
 p_genre_era <- ggplot(genre_era, aes(half_year, pct, fill = genre)) +
   geom_area(position = "stack") +
+  scale_fill_manual(values = genre_colors) +
   scale_x_date(date_labels = "%b '%y", date_breaks = "6 months",
                limits = x_limits) +
   scale_y_continuous(labels = percent) +
@@ -281,15 +306,15 @@ The overarching narrative is one of two inflection points: a July '22 Jamiroquai
 ## Research Question 4: Platform Comparison
 
 ```{r rq4-table}
-platform_tbl <- music |>
-  group_by(source_label) |>
+platform_tbl <- music %>%
+  group_by(source_label) %>%
   summarise(
     Plays            = format(n(), big.mark = ","),
     Hours            = round(sum(minutes_played) / 60, 1),
     `Avg Min / Play` = round(mean(minutes_played), 2),
     `Skip Rate`      = percent(mean(skipped), 0.1),
     .groups = "drop"
-  ) |>
+  ) %>%
   rename(Source = source_label)
 
 kable(platform_tbl,
@@ -299,9 +324,9 @@ kable(platform_tbl,
 ```
 
 ```{r rq4-platform-bar, fig.height=2.4, fig.cap="Total listening hours by device platform across both services."}
-platform_summary <- music |>
-  group_by(platform_clean) |>
-  summarise(hours = sum(minutes_played) / 60, .groups = "drop") |>
+platform_summary <- music %>%
+  group_by(platform_clean) %>%
+  summarise(hours = sum(minutes_played) / 60, .groups = "drop") %>%
   arrange(desc(hours))
 
 ggplot(platform_summary,
